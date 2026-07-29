@@ -22,12 +22,38 @@ export interface Lead {
 
 export type MessageAuthor = 'support' | 'visitor'
 
+/**
+ * Who produced a support reply.
+ *
+ * The panel's disclosure is rendered from this, so the backend can start as a
+ * scripted stub, become an LLM, and later hand off to a person without the
+ * client claiming something untrue in the meantime.
+ */
+export type AuthorKind = 'scripted' | 'assistant' | 'human'
+
+/** Display only. Never carries credentials — those stay on the server. */
+export interface AgentInfo {
+  name?: string
+  model?: string
+}
+
 export interface ChatMessage {
   id: string
   from: MessageAuthor
   text: string
   at: string
+  /** echo of the sender's optimistic id, used to reconcile rather than duplicate */
+  clientId?: string
+  authorKind?: AuthorKind
+  agent?: AgentInfo
   local?: boolean
+}
+
+/** Local-only delivery state for a visitor's own message. */
+export type MessageStatus = 'sending' | 'sent' | 'failed'
+
+export interface ThreadMessage extends ChatMessage {
+  status?: MessageStatus
 }
 
 export interface Project {

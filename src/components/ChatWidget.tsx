@@ -22,13 +22,14 @@ import { STICKY_CTA } from '../data/copy'
 import {
   createLead,
   flushOutbox,
+  getThread,
   outbox,
   postMessage,
   queueFailedLead,
 } from '../api/index'
 import { ErrorBoundary } from './ErrorBoundary'
 import { clearStoredRequest, readStoredRequest, writeStoredRequest } from '../api/storage'
-import type { ChatMessage, LeadFields } from '../api/types'
+import type { AuthorKind, ChatMessage, LeadFields, ThreadMessage } from '../api/types'
 import './ChatWidget.css'
 
 /**
@@ -95,6 +96,59 @@ function makeTicketId(): string {
   return `NYC-${stamp}-${suffix}`
 }
 
+function newClientId(): string {
+  return `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+/**
+ * Server copies win over optimistic ones, matched on clientId. Without this a
+ * reopened thread shows every visitor message twice: once as the local bubble
+ * and once as whatever the server stored.
+ */
+function mergeThreads(local: ThreadMessage[], remote: ChatMessage[]): ThreadMessage[] {
+  const result: ThreadMessage[] = [...local]
+  // Indexed by both keys: once a bubble has been reconciled it carries the
+  // server's id AND its own clientId, and the server may echo either. Matching
+  // on one alone shows the message twice.
+  const positions = new Map<string, number>()
+
+  const indexAt = (message: ThreadMessage, position: number) => {
+    positions.set(message.id, position)
+    if (message.clientId) positions.set(message.clientId, position)
+  }
+
+  result.forEach(indexAt)
+
+  for (const message of remote) {
+    const known =
+      positions.get(message.id) ??
+      (message.clientId ? positions.get(message.clientId) : undefined)
+
+    if (known !== undefined && result[known]) {
+      result[known] = { ...result[known], ...message, status: 'sent' }
+      indexAt(result[known], known)
+      continue
+    }
+
+    const merged: ThreadMessage = { ...message, status: 'sent' }
+    indexAt(merged, result.length)
+    result.push(merged)
+  }
+
+  return result
+}
+
+/** The disclosure has to match whoever is actually answering. */
+function disclosureFor(messages: ThreadMessage[]): string {
+  const kinds = new Set<AuthorKind>()
+  for (const message of messages) {
+    if (message.from === 'support') kinds.add(message.authorKind ?? 'scripted')
+  }
+  if (kinds.has('human')) return CHAT_COPY.humanNotice
+  if (kinds.has('assistant')) return CHAT_COPY.assistantNotice
+  return CHAT_COPY.automatedNotice
+}
+
 function fillTemplate(text: string, ticket: string | null): string {
   return text.replace(/\{ticket\}/g, ticket ?? '')
 }
@@ -157,7 +211,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ChatView>(initial ? 'chat' : 'form')
   const [ticket, setTicket] = useState<string | null>(initial?.ticket ?? null)
   const [lead, setLead] = useState<LeadFields | null>(initial?.lead ?? null)
-  const [messages, setMessages] = useState<ChatMessage[]>(initial?.messages ?? [])
+  const [messages, setMessages] = useState<ThreadMessage[]>(initial?.messages ?? [])
   const [typing, setTyping] = useState(false)
   const [unread, setUnread] = useState(0)
   const [scrolled, setScrolled] = useState(false)
@@ -216,7 +270,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, typing, view, isOpen])
 
-  const pushMessage = useCallback((message: ChatMessage) => {
+  const pushMessage = useCallback((message: ThreadMessage) => {
     setMessages((prev) => [...prev, message])
     if (message.from === 'support' && !openRef.current) {
       setUnread((n) => n + 1)
@@ -316,22 +370,77 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [advanceScript]
   )
 
+  /** Deliver one visitor message and settle its bubble. */
+  const deliver = useCallback(
+    async (clientId: string, text: string, currentTicket: string) => {
+      try {
+        const saved = await postMessage(currentTicket, text, clientId)
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.clientId === clientId
+              ? { ...message, ...saved, clientId, status: 'sent' }
+              : message
+          )
+        )
+      } catch {
+        // the bubble stays, marked undelivered, with its own retry
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.clientId === clientId ? { ...message, status: 'failed' } : message
+          )
+        )
+      }
+    },
+    []
+  )
+
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim().slice(0, 500)
       if (!trimmed || !ticket) return
+      const clientId = newClientId()
       pushMessage({
-        id: `v-${Date.now()}`,
+        id: clientId,
+        clientId,
         from: 'visitor',
         text: trimmed,
         at: timeStamp(),
+        status: 'sending',
       })
-      // fire and forget: the thread must not stall on the network
-      void postMessage(ticket, trimmed)
+      void deliver(clientId, trimmed, ticket)
       advanceScript(lead, ticket)
     },
-    [advanceScript, lead, pushMessage, ticket]
+    [advanceScript, deliver, lead, pushMessage, ticket]
   )
+
+  const retryMessage = useCallback(
+    (clientId: string) => {
+      if (!ticket) return
+      const target = messages.find((message) => message.clientId === clientId)
+      if (!target) return
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.clientId === clientId ? { ...message, status: 'sending' } : message
+        )
+      )
+      void deliver(clientId, target.text, ticket)
+    },
+    [deliver, messages, ticket]
+  )
+
+  // Reopening the panel reconciles with whatever the server has. Harmless
+  // against the stub, and the whole point once a real operator can reply.
+  useEffect(() => {
+    if (!isOpen || !ticket) return
+    let active = true
+    void getThread(ticket).then((thread) => {
+      if (!active || thread.messages.length === 0) return
+      setMessages((prev) => mergeThreads(prev, thread.messages))
+    })
+    return () => {
+      active = false
+    }
+  }, [isOpen, ticket])
 
   const retryDelivery = useCallback(async () => {
     setRetrying(true)
@@ -412,6 +521,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             onSend={sendMessage}
             onReset={reset}
             onRetryDelivery={retryDelivery}
+            onRetryMessage={retryMessage}
           />
         )}
       </ErrorBoundary>
@@ -473,7 +583,7 @@ interface ChatPanelProps {
   view: ChatView
   ticket: string | null
   lead: LeadFields | null
-  messages: ChatMessage[]
+  messages: ThreadMessage[]
   typing: boolean
   storageOk: boolean
   scriptDone: boolean
@@ -485,6 +595,7 @@ interface ChatPanelProps {
   onSend: (text: string) => void
   onReset: () => void
   onRetryDelivery: () => void
+  onRetryMessage: (clientId: string) => void
 }
 
 function ChatPanel({
@@ -503,6 +614,7 @@ function ChatPanel({
   onSend,
   onReset,
   onRetryDelivery,
+  onRetryMessage,
 }: ChatPanelProps) {
   return (
     <section className="chat-panel" role="dialog" aria-label="Get a price">
@@ -513,7 +625,12 @@ function ChatPanel({
           </div>
           {view === 'chat' && ticket && <div className="chat-ticket">{ticket}</div>}
         </div>
-        <button className="chat-close" type="button" onClick={onClose} aria-label="Close">
+        <button
+          className="chat-close"
+          type="button"
+          onClick={onClose}
+          aria-label="Close chat"
+        >
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
             <path
               d="M2 2l8 8M10 2l-8 8"
@@ -525,7 +642,7 @@ function ChatPanel({
         </button>
       </header>
 
-      <p className="chat-disclosure">{CHAT_COPY.automatedNotice}</p>
+      <p className="chat-disclosure">{disclosureFor(messages)}</p>
 
       {!storageOk && <p className="chat-disclosure">{CHAT_COPY.storageWarning}</p>}
 
@@ -545,6 +662,7 @@ function ChatPanel({
           onSend={onSend}
           onReset={onReset}
           onRetryDelivery={onRetryDelivery}
+          onRetryMessage={onRetryMessage}
         />
       )}
     </section>
@@ -647,7 +765,7 @@ function LeadForm({ onSubmit }: { onSubmit: (values: LeadFields) => void }) {
 interface ThreadProps {
   ticket: string | null
   lead: LeadFields | null
-  messages: ChatMessage[]
+  messages: ThreadMessage[]
   typing: boolean
   scriptDone: boolean
   storageOk: boolean
@@ -657,6 +775,7 @@ interface ThreadProps {
   onSend: (text: string) => void
   onReset: () => void
   onRetryDelivery: () => void
+  onRetryMessage: (clientId: string) => void
 }
 
 function Thread({
@@ -672,6 +791,7 @@ function Thread({
   onSend,
   onReset,
   onRetryDelivery,
+  onRetryMessage,
 }: ThreadProps) {
   const [draft, setDraft] = useState('')
   const reducedMotion = usePrefersReducedMotion()
@@ -708,13 +828,30 @@ function Thread({
               <div className="chat-time">
                 {message.from === 'support' ? (
                   <>
-                    {CHAT_COPY.supportName}
-                    <span className="chat-auto-tag"> · {CHAT_COPY.supportTag}</span>
+                    {message.agent?.name ?? CHAT_COPY.supportName}
+                    {message.authorKind !== 'human' && (
+                      <span className="chat-auto-tag"> · {CHAT_COPY.supportTag}</span>
+                    )}
                   </>
                 ) : (
                   'You'
                 )}{' '}
                 · {message.at}
+                {message.status === 'sending' && (
+                  <span className="chat-auto-tag"> · {CHAT_COPY.messageSending}</span>
+                )}
+                {message.status === 'failed' && (
+                  <>
+                    <span className="chat-msg-failed"> · {CHAT_COPY.messageFailed}</span>{' '}
+                    <button
+                      className="chat-msg-retry"
+                      type="button"
+                      onClick={() => message.clientId && onRetryMessage(message.clientId)}
+                    >
+                      {CHAT_COPY.messageRetry}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

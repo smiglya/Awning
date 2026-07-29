@@ -21,11 +21,36 @@
  *   404    { error: 'not_found' }
  *
  * POST /api/v1/leads/:ticket/messages
- *   body   { text, from: 'visitor' }
- *   201    { id, from, text, at }
+ *   body   { text, from: 'visitor', clientId }
+ *   201    { id, from, text, at, clientId }
+ *   `clientId` is echoed back so the optimistic bubble can be reconciled
+ *   instead of duplicated.
  *
  * GET /api/v1/leads/:ticket/messages
- *   200    { messages: [{ id, from: 'visitor'|'support', text, at }] }
+ *   200    { messages: [Message] }
+ *
+ * GET /api/v1/leads/:ticket/stream            (Server-Sent Events)
+ *   event: message   data: Message
+ *   event: typing    data: { authorKind }
+ *   Declared now, consumed at v2. SSE rather than WebSocket: replies flow one
+ *   way, it survives proxies, and it reconnects without a library.
+ *
+ * ---------------------------------------------------------------------------
+ * Message = {
+ *   id, from: 'visitor' | 'support', text, at,
+ *   clientId?,                       // echo of the sender's optimistic id
+ *   authorKind?: 'scripted' | 'assistant' | 'human',
+ *   agent?: { name?, model? }        // display only
+ * }
+ *
+ * `authorKind` is what lets the panel tell the truth about who is answering.
+ * The disclosure in the header is rendered from it, so switching the backend
+ * between a scripted stub, an LLM and a live operator needs no client change.
+ *
+ * LLM KEYS LIVE ON THE SERVER. The browser bundle is readable by anyone, so a
+ * provider key shipped to the client is a published key. The client only ever
+ * talks to these routes; whichever model answers, and with which credentials,
+ * is the backend's business.
  *
  * GET /api/v1/projects
  *   200    { projects: [{ id, client, category, neighbourhood, borough,
@@ -51,6 +76,8 @@ export const ENDPOINTS = {
   getLead: { method: 'GET', path: '/api/v1/leads/:ticket' },
   postMessage: { method: 'POST', path: '/api/v1/leads/:ticket/messages' },
   getThread: { method: 'GET', path: '/api/v1/leads/:ticket/messages' },
+  /** SSE. Declared for the backend to build against; wired at v2. */
+  streamThread: { method: 'GET', path: '/api/v1/leads/:ticket/stream' },
   listProjects: { method: 'GET', path: '/api/v1/projects' },
   subscribe: { method: 'POST', path: '/api/v1/newsletter' },
 } as const satisfies Record<string, Endpoint>

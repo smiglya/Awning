@@ -28,11 +28,21 @@ export const LeadSchema = v.object({
   local: v.optional(v.boolean()),
 })
 
+export const AgentInfoSchema = v.object({
+  name: v.optional(v.string()),
+  model: v.optional(v.string()),
+})
+
 export const ChatMessageSchema = v.object({
   id: v.pipe(v.string(), v.minLength(1)),
   from: v.picklist(['support', 'visitor']),
   text: v.string(),
   at: isoOrClock,
+  clientId: v.optional(v.string()),
+  // unknown kinds are rejected on purpose: the disclosure text depends on this,
+  // and guessing would mean mislabelling who is answering
+  authorKind: v.optional(v.picklist(['scripted', 'assistant', 'human'])),
+  agent: v.optional(AgentInfoSchema),
   local: v.optional(v.boolean()),
 })
 

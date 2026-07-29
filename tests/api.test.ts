@@ -11,6 +11,7 @@ describe('endpoint contract', () => {
       'getThread',
       'listProjects',
       'postMessage',
+      'streamThread',
       'subscribe',
     ])
   })

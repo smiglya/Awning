@@ -1,5 +1,5 @@
-import { isLive, warnOffline } from './config'
-import { ENDPOINTS } from './endpoints'
+import { isLive, services, warnOffline } from './config'
+import { buildPath, ENDPOINTS } from './endpoints'
 import { request, requestOrSample } from './http'
 import { readStoredRequest } from './storage'
 import {
@@ -134,18 +134,27 @@ export function getLead(ticket: string): Promise<Lead | null> {
 
 /* ---------------------------------------------------------------- messages */
 
-export function postMessage(ticket: string, text: string): Promise<ChatMessage> {
+/**
+ * `clientId` travels with the message so the server can echo it back and the
+ * optimistic bubble is reconciled rather than duplicated.
+ */
+export function postMessage(
+  ticket: string,
+  text: string,
+  clientId: string
+): Promise<ChatMessage> {
   return requestOrSample<ChatMessage>(
     ENDPOINTS.postMessage,
     {
       service: 'chat',
       params: { ticket },
-      body: { text, from: 'visitor' },
+      body: { text, from: 'visitor', clientId },
       schema: ChatMessageSchema,
-      idempotencyKey: messageIdempotencyKey(),
+      idempotencyKey: clientId,
     },
     () => ({
-      id: `v-${Date.now()}`,
+      id: clientId,
+      clientId,
       from: 'visitor',
       text,
       at: new Date().toISOString(),
@@ -153,6 +162,16 @@ export function postMessage(ticket: string, text: string): Promise<ChatMessage> 
     }),
     'postMessage'
   )
+}
+
+/**
+ * URL for the SSE stream. Not consumed yet — CHAT_REALTIME is "simulate until
+ * v2" — but exposed so the transport can be switched on without touching the
+ * contract or the components.
+ */
+export function threadStreamUrl(ticket: string): string | null {
+  if (!isLive) return null
+  return `${services.chat}${buildPath(ENDPOINTS.streamThread.path, { ticket })}`
 }
 
 export function getThread(ticket: string): Promise<ThreadResponse> {

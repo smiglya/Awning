@@ -15,7 +15,17 @@ export const CHAT_COPY = {
   formTitle: 'Get a price',
   formSub: 'Two taps and two lines. You get a number back, not a proposal.',
   // Stated from first paint. The scripted replies must never pose as a person.
+  // Which of the three is shown follows the authorKind on the replies received,
+  // so switching the backend between a stub, an LLM and a real operator cannot
+  // leave the panel claiming something untrue.
   automatedNotice: 'Replies here are automated. A person follows up by email.',
+  assistantNotice:
+    'You are talking to an assistant, not a person. A person picks this up by email.',
+  humanNotice: 'Someone from the studio is on this thread.',
+
+  messageFailed: 'Not delivered',
+  messageRetry: 'Retry',
+  messageSending: 'Sending',
   submitLabel: 'Start my request',
   submittingLabel: 'Opening request',
   threadTitle: 'Your request',

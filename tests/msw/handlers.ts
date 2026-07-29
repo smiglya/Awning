@@ -29,12 +29,19 @@ export const handlers = [
     })
   ),
 
-  http.post(at(ENDPOINTS.postMessage), () =>
-    HttpResponse.json(
-      { id: 'srv-1', from: 'visitor', text: 'hello', at: '10:00' },
+  http.post(at(ENDPOINTS.postMessage), async ({ request }) => {
+    const body = (await request.json()) as { text: string; clientId: string }
+    return HttpResponse.json(
+      {
+        id: 'srv-1',
+        clientId: body.clientId,
+        from: 'visitor',
+        text: body.text,
+        at: '10:00',
+      },
       { status: 201 }
     )
-  ),
+  }),
 
   http.get(at(ENDPOINTS.getThread), () => HttpResponse.json({ messages: [] })),
 
