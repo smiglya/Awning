@@ -1,0 +1,97 @@
+.demo-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  border-radius: 12px;
+  background-color: var(--paper);
+  border: 0.5px solid var(--grey-3);
+  overflow: hidden;
+  color: var(--ink);
+  /* technical ground: a faint engineering grid under every demo */
+  background-image:
+    linear-gradient(to right, rgba(10, 10, 10, 0.045) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.045) 0.5px, transparent 0.5px);
+  background-size: 22px 22px;
+}
+
+.demo-area-click {
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------- magnetic pill */
+
+.demo-magnet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background-color: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+/* -------------------------------------------------------------- scramble */
+
+.demo-scramble {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  /* fixed metrics so churning glyphs never reflow the tile */
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- roller */
+
+.demo-roller {
+  display: inline-flex;
+  align-items: flex-start;
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 46px;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-roller-prefix {
+  margin-right: 2px;
+}
+
+.demo-digit {
+  display: inline-block;
+  height: 46px;
+  overflow: hidden;
+}
+
+.demo-digit-col {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.demo-digit-cell {
+  height: 46px;
+  line-height: 46px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ drawn line */
+
+.demo-line-svg {
+  width: 78%;
+  height: auto;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-area-click {
+    cursor: default;
+  }
+}

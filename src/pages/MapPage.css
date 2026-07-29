@@ -1,0 +1,57 @@
+.map-page {
+  background-color: var(--paper);
+  color: var(--ink);
+  padding-top: 104px;
+  padding-bottom: var(--section-pad);
+}
+
+.map-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 32px 0 56px;
+}
+
+.map-back {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--grey-1);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.map-back:hover {
+  color: var(--ink);
+}
+
+.map-h1 {
+  margin: 24px 0 0;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 20ch;
+}
+
+.map-sub {
+  margin: 20px 0 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--grey-1);
+  max-width: 52ch;
+}
+
+.map-head-cta {
+  margin-top: 32px;
+}
+
+@media (min-width: 768px) {
+  .map-page {
+    padding-top: 120px;
+  }
+
+  .map-head {
+    padding: 40px 0 72px;
+  }
+}

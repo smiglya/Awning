@@ -1,0 +1,218 @@
+.footer {
+  background-color: var(--paper);
+  color: var(--ink);
+  padding-top: var(--section-pad);
+  overflow: hidden;
+}
+
+.foot-rule {
+  height: 0;
+  border-top: 0.5px solid var(--grey-3);
+}
+
+/* ------------------------------------------------------------- signup */
+
+.foot-signup {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 40px;
+}
+
+.foot-signup-copy {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.foot-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.foot-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 0.5px solid var(--grey-3);
+  background: transparent;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink);
+  outline: none;
+}
+
+.foot-input::placeholder {
+  color: var(--grey-2);
+}
+
+.foot-input:focus {
+  border-bottom-color: var(--ink);
+}
+
+.foot-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--ink);
+  transition: opacity 0.2s ease;
+}
+
+.foot-arrow:hover {
+  opacity: 0.85;
+}
+
+/* -------------------------------------------------------- link columns */
+
+.foot-cols {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px var(--gutter);
+  padding: 48px 0;
+}
+
+.foot-col-head {
+  margin: 0 0 20px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--grey-1);
+}
+
+.foot-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.foot-link {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.foot-link:hover {
+  opacity: 0.55;
+}
+
+/* -------------------------------------------------------------- legal */
+
+.foot-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px 0;
+}
+
+.foot-legal-copy {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--grey-1);
+}
+
+.foot-social {
+  display: flex;
+  gap: 8px;
+}
+
+.foot-social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0.5px solid var(--grey-3);
+  color: var(--grey-1);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.foot-social-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.foot-done {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.foot-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--grey-1);
+}
+
+.foot-arrow:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ----------------------------------------------------------- wordmark */
+
+/* The clip height is in em of the wordmark's own size, so the crop stays
+   proportional no matter how long the brand name is. */
+.foot-wordmark-clip {
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+.foot-wordmark {
+  display: block;
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.78;
+  white-space: nowrap;
+  color: var(--ink);
+  margin-bottom: -0.16em;
+}
+
+/* ============================================== desktop — 768px and up */
+
+@media (min-width: 768px) {
+  .foot-signup {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    padding-bottom: 48px;
+  }
+
+  .foot-form {
+    flex: 0 1 420px;
+  }
+
+  .foot-input {
+    max-width: none;
+  }
+
+  .foot-cols {
+    grid-template-columns: repeat(4, 1fr);
+    padding: 64px 0;
+  }
+
+  .foot-legal {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 40px 0;
+  }
+}

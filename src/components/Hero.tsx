@@ -1,0 +1,123 @@
+import { useRef, type ReactNode } from 'react'
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
+import { scrollToId } from '../router'
+import { useChat } from './ChatWidget'
+import { HERO } from '../data/copy'
+import { EASE } from './motion-presets'
+import './Hero.css'
+
+const VIDEO_SRC =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_215831_c6a8989c-d716-4d8d-8745-e972a2eec711.mp4'
+
+/** Each line rides up out of its own clipping box — reads as type being set. */
+function Line({ children, delay }: { children: ReactNode; delay: number }) {
+  return (
+    <span className="heading-line">
+      <motion.span
+        className="heading-line-inner"
+        initial={{ y: '110%' }}
+        animate={{ y: '0%' }}
+        transition={{ duration: 1.05, delay, ease: EASE }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}
+
+export default function Hero() {
+  const { open: openChat } = useChat()
+  const heroRef = useRef(null)
+  const reduced = useReducedMotion()
+
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  })
+  // the showpiece drifts and settles as the page leaves it behind
+  const videoY = useTransform(scrollYProgress, [0, 1], ['0%', '14%'])
+  const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.08])
+
+  return (
+    <div className="hero" ref={heroRef}>
+      <motion.div
+        className="video-layer"
+        style={reduced ? undefined : { y: videoY, scale: videoScale }}
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.8, ease: EASE }}
+      >
+        <div className="video-wrapper">
+          <video className="video" src={VIDEO_SRC} autoPlay muted loop playsInline />
+        </div>
+      </motion.div>
+
+      {/* The headline claims this animation is the portfolio, so label it. */}
+      <motion.div
+        className="hero-marker"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 1.4, ease: EASE }}
+      >
+        <span className="hero-marker-dot" />
+        Running live. Our own motion, not stock footage.
+      </motion.div>
+
+      <motion.div
+        className="hero-foot"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 1, delay: 0.5, ease: EASE }}
+      >
+        <div className="hero-foot-left">
+          <motion.div
+            className="subtitle"
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
+          >
+            <span className="subtitle-dot" />
+            <span>{HERO.subtitle}</span>
+          </motion.div>
+
+          <h1 className="heading">
+            <Line delay={0.75}>{HERO.line1}</Line>
+            <Line delay={0.87}>{HERO.line2}</Line>
+          </h1>
+
+          <motion.div
+            className="cta-row"
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.15, ease: EASE }}
+          >
+            <button className="btn btn-primary" type="button" onClick={openChat}>
+              {HERO.primaryCta}
+            </button>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => scrollToId('motion')}
+            >
+              {HERO.secondaryCta}
+            </button>
+          </motion.div>
+        </div>
+
+        <div className="hero-foot-right">
+          {HERO.tags.map((tag, i) => (
+            <motion.span
+              className="hero-tag"
+              key={tag}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.25 + i * 0.08, ease: EASE }}
+            >
+              {tag}
+            </motion.span>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  )
+}

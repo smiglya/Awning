@@ -1,0 +1,68 @@
+.marquee {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ink);
+  color: var(--paper);
+  padding: 16px 0;
+  /* the strip fades at both edges instead of hard-cutting the glyphs */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: marquee-slide linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  white-space: nowrap;
+  color: rgba(250, 250, 249, 0.82);
+}
+
+.marquee-sep {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 28px;
+  border-radius: 50%;
+  background-color: rgba(250, 250, 249, 0.35);
+}
+
+@keyframes marquee-slide {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
