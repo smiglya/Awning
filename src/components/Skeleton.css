@@ -1,0 +1,76 @@
+.sk-bar,
+.sk-block {
+  display: block;
+  background-color: var(--grey-3);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-block {
+  border-radius: 0;
+}
+
+/* A slow sweep, monochrome like everything else. Nothing pulses or blinks. */
+.sk-bar::after,
+.sk-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: sk-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-bar::after,
+  .sk-block::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Matches .work-body's own padding and rhythm so the card keeps its height. */
+.sk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-body .sk-bar:nth-child(2) {
+  margin-bottom: 6px;
+}
+
+/* ------------------------------------------------------------ empty/error */
+
+.state-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 48px 0;
+}
+
+.state-note-compact {
+  padding: 24px 0;
+}
+
+.state-note-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--grey-1);
+  max-width: 44ch;
+}

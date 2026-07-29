@@ -1,32 +1,117 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { BOROUGHS, MAP_VIEWBOX, NEIGHBOURHOODS, type Point } from '../data/nycMap'
-import { CLIENTS } from '../data/clients'
+import { useProjects } from '../data/useProjects'
+import { EmptyState, ErrorState, SkeletonBar } from './Skeleton'
 import type { Project } from '../api/types'
 import './ClientMap.css'
 
 const FILTERS = ['All five boroughs', ...BOROUGHS.map((b) => b.name)]
+const ALL_FILTER = FILTERS[0] ?? 'All five boroughs'
 
 function coordsFor(client: Project): Point | null {
   return NEIGHBOURHOODS[client.neighbourhood] ?? null
 }
 
+/** Boroughs render immediately; only the pins and the card wait on data. */
+function MapShell({ children }: { children?: ReactNode }) {
+  return (
+    <div className="map-canvas">
+      <svg
+        viewBox={MAP_VIEWBOX}
+        className="map-svg"
+        role="img"
+        aria-label="Schematic map of New York City with client locations"
+      >
+        {BOROUGHS.map((borough) => (
+          <polygon key={borough.name} points={borough.points} className="map-borough" />
+        ))}
+        {BOROUGHS.map((borough) => (
+          <text
+            key={`${borough.name}-label`}
+            x={borough.labelX}
+            y={borough.labelY}
+            textAnchor={borough.labelAnchor}
+            className="map-borough-label"
+          >
+            {borough.name}
+          </text>
+        ))}
+        {children}
+      </svg>
+    </div>
+  )
+}
+
+function DetailSkeleton() {
+  return (
+    <aside className="map-detail" aria-hidden="true">
+      <article className="map-card sk-card">
+        <div className="sk-block map-shot" />
+        <SkeletonBar width="58%" height={20} />
+        <SkeletonBar width="34%" height={13} />
+        <SkeletonBar width="100%" height={14} />
+        <SkeletonBar width="76%" height={14} />
+      </article>
+    </aside>
+  )
+}
+
 export default function ClientMap() {
-  const [filter, setFilter] = useState(FILTERS[0])
-  const [selectedId, setSelectedId] = useState(CLIENTS[0]?.id ?? null)
+  const { state, retry } = useProjects()
+  const [filter, setFilter] = useState<string>(ALL_FILTER)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const all = state.status === 'ready' ? state.projects : []
 
   const visible = useMemo(() => {
-    if (filter === FILTERS[0]) return CLIENTS
-    return CLIENTS.filter((client) => client.borough === filter)
-  }, [filter])
+    if (filter === ALL_FILTER) return all
+    return all.filter((client) => client.borough === filter)
+  }, [all, filter])
 
   const selected =
-    visible.find((client) => client.id === selectedId) || visible[0] || null
+    visible.find((client) => client.id === selectedId) ?? visible[0] ?? null
 
   const handleFilter = (next: string) => {
     setFilter(next)
     const first =
-      next === FILTERS[0] ? CLIENTS[0] : CLIENTS.find((client) => client.borough === next)
-    if (first) setSelectedId(first.id)
+      next === ALL_FILTER ? all[0] : all.find((client) => client.borough === next)
+    setSelectedId(first?.id ?? null)
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="map-wrap">
+        <MapShell />
+        <ErrorState message={state.message} onRetry={retry} />
+      </div>
+    )
+  }
+
+  if (state.status === 'loading') {
+    return (
+      <div className="map-wrap">
+        <div className="map-filters" aria-hidden="true">
+          {FILTERS.map((option) => (
+            <span className="map-filter" key={option}>
+              {option}
+            </span>
+          ))}
+        </div>
+        <div className="map-layout">
+          <MapShell />
+          <DetailSkeleton />
+        </div>
+      </div>
+    )
+  }
+
+  if (all.length === 0) {
+    return (
+      <div className="map-wrap">
+        <MapShell />
+        <EmptyState message="No builds are on the map yet." />
+      </div>
+    )
   }
 
   return (
@@ -45,37 +130,12 @@ export default function ClientMap() {
       </div>
 
       <div className="map-layout">
-        <div className="map-canvas">
-          <svg
-            viewBox={MAP_VIEWBOX}
-            className="map-svg"
-            role="img"
-            aria-label="Schematic map of New York City with client locations"
-          >
-            {BOROUGHS.map((borough) => (
-              <polygon
-                key={borough.name}
-                points={borough.points}
-                className="map-borough"
-              />
-            ))}
-
-            {BOROUGHS.map((borough) => (
-              <text
-                key={`${borough.name}-label`}
-                x={borough.labelX}
-                y={borough.labelY}
-                textAnchor={borough.labelAnchor}
-                className="map-borough-label"
-              >
-                {borough.name}
-              </text>
-            ))}
-
+        <div>
+          <MapShell>
             {visible.map((client) => {
               const point = coordsFor(client)
               if (!point) return null
-              const isActive = selected && client.id === selected.id
+              const isActive = selected !== null && client.id === selected.id
               return (
                 <g
                   key={client.id}
@@ -97,10 +157,10 @@ export default function ClientMap() {
                 </g>
               )
             })}
-          </svg>
+          </MapShell>
 
           <p className="map-note">
-            Schematic map, not to scale. {CLIENTS.length} sample builds shown.
+            Schematic map, not to scale. {all.length} sample builds shown.
           </p>
         </div>
 
@@ -148,7 +208,7 @@ export default function ClientMap() {
           <li key={client.id}>
             <button
               className={`map-list-row${
-                selected && client.id === selected.id ? ' map-list-row-on' : ''
+                selected !== null && client.id === selected.id ? ' map-list-row-on' : ''
               }`}
               type="button"
               onClick={() => setSelectedId(client.id)}

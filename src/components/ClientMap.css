@@ -114,6 +114,12 @@
   min-width: 0;
 }
 
+.sk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .map-card {
   background-color: #ffffff;
   border: 0.5px solid var(--grey-3);

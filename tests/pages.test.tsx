@@ -41,8 +41,8 @@ describe('client map page', () => {
     ).toBeInTheDocument()
   })
 
-  it('labels the map as schematic rather than accurate', () => {
+  it('labels the map as schematic rather than accurate', async () => {
     renderAt('/work-map')
-    expect(screen.getByText(/schematic map, not to scale/i)).toBeInTheDocument()
+    expect(await screen.findByText(/schematic map, not to scale/i)).toBeInTheDocument()
   })
 })

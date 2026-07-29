@@ -221,6 +221,8 @@
 
 .work-body {
   padding: 22px;
+  /* reserved so the skeleton and the loaded card occupy the same box */
+  min-height: 152px;
 }
 
 .work-head {

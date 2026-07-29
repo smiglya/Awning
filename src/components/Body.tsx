@@ -4,6 +4,8 @@ import { useChat } from './ChatWidget'
 import Marquee from './Marquee'
 import { DEMO_COMPONENTS, type DemoKey } from './MotionDemos'
 import { reveal, rise, stagger } from './motion-presets'
+import { EmptyState, ErrorState, WorkCardSkeleton } from './Skeleton'
+import { useProjects } from '../data/useProjects'
 import {
   IconBrief,
   IconBuild,
@@ -18,7 +20,6 @@ import {
   IconServer,
   IconTwoTongues,
 } from './icons'
-import { CLIENTS } from '../data/clients'
 import {
   FINAL_CTA,
   FULL_CYCLE,
@@ -189,9 +190,11 @@ function Proof() {
 
 /* -------------------------------------------------------------- 7. portfolio */
 
+const PORTFOLIO_COUNT = 6
+
 function Portfolio() {
   const { open: openChat } = useChat()
-  const shown = CLIENTS.slice(0, 6)
+  const { state, retry } = useProjects()
 
   return (
     <section className="section" id="work">
@@ -203,27 +206,45 @@ function Portfolio() {
           {PORTFOLIO.sub}
         </motion.p>
 
-        <motion.div className="work-grid" {...stagger(0.08)}>
-          {shown.map((item) => (
-            <motion.article className="work-card" key={item.id} {...rise(28)}>
-              <div className="ph work-shot">
-                <span className="ph-label">Photo — {item.client}</span>
-              </div>
+        {state.status === 'loading' && (
+          <div className="work-grid">
+            {Array.from({ length: PORTFOLIO_COUNT }, (_, i) => (
+              <WorkCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
 
-              <div className="work-body">
-                <div className="work-head">
-                  <h3 className="work-title">{item.client}</h3>
-                  <span className="work-price">{item.price}</span>
+        {state.status === 'error' && (
+          <ErrorState message={state.message} onRetry={retry} />
+        )}
+
+        {state.status === 'ready' && state.projects.length === 0 && (
+          <EmptyState message="No builds to show yet. The first ones go up here." />
+        )}
+
+        {state.status === 'ready' && state.projects.length > 0 && (
+          <motion.div className="work-grid" {...stagger(0.08)}>
+            {state.projects.slice(0, PORTFOLIO_COUNT).map((item) => (
+              <motion.article className="work-card" key={item.id} {...rise(28)}>
+                <div className="ph work-shot">
+                  <span className="ph-label">Photo — {item.client}</span>
                 </div>
-                <p className="work-meta">
-                  <IconPin size={13} className="work-pin" />
-                  {item.neighbourhood}, {item.borough} · {item.category} · {item.days}
-                </p>
-                <p className="work-blurb">{item.blurb}</p>
-              </div>
-            </motion.article>
-          ))}
-        </motion.div>
+
+                <div className="work-body">
+                  <div className="work-head">
+                    <h3 className="work-title">{item.client}</h3>
+                    <span className="work-price">{item.price}</span>
+                  </div>
+                  <p className="work-meta">
+                    <IconPin size={13} className="work-pin" />
+                    {item.neighbourhood}, {item.borough} · {item.category} · {item.days}
+                  </p>
+                  <p className="work-blurb">{item.blurb}</p>
+                </div>
+              </motion.article>
+            ))}
+          </motion.div>
+        )}
 
         <motion.div className="work-cta" {...reveal(0.08, 16)}>
           <button className="pill pill-fill" type="button" onClick={openChat}>

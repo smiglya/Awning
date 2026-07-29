@@ -3,6 +3,7 @@ import { cleanup } from '@testing-library/react'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 import { handlers } from './msw/handlers'
+import { clearProjectsCache } from '../src/data/useProjects'
 
 export const server = setupServer(...handlers)
 
@@ -11,6 +12,9 @@ afterEach(() => {
   server.resetHandlers()
   cleanup()
   window.localStorage.clear()
+  window.sessionStorage.clear()
+  // module-level cache must not leak between tests
+  clearProjectsCache()
 })
 afterAll(() => server.close())
 

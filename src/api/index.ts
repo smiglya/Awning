@@ -1,5 +1,5 @@
 import { ENDPOINTS } from './endpoints'
-import { requestOrLocal } from './http'
+import { requestOrLocal, requestOrSample } from './http'
 import { readStoredRequest } from './storage'
 import {
   beginLeadSubmission,
@@ -119,10 +119,14 @@ export interface ListProjectsOptions {
 /**
  * Portfolio and map pins. Paginated from the start — twelve sample records
  * today, but an unbounded list is a problem that only shows up in production.
+ *
+ * Uses requestOrSample, not requestOrLocal: with no backend configured the
+ * sample set is the honest answer, but a configured backend that fails must
+ * surface as an error the visitor can retry.
  */
 export function listProjects(options: ListProjectsOptions = {}): Promise<ProjectList> {
   const { page = 1, limit = 50, signal } = options
-  return requestOrLocal<ProjectList>(
+  return requestOrSample<ProjectList>(
     ENDPOINTS.listProjects,
     {
       service: 'projects',

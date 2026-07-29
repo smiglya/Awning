@@ -256,10 +256,31 @@ export async function request<T>(
 }
 
 /**
+ * Local data only when no backend is configured at all.
+ *
+ * The distinction that matters: "there is no server yet" is a supported mode
+ * and should serve the sample set; "the server is configured and failing" is an
+ * outage and must reach the UI. Collapsing the two is what made the error
+ * states unreachable.
+ */
+export async function requestOrSample<T>(
+  endpoint: Endpoint,
+  options: RequestOptions<T>,
+  sample: () => T,
+  label: string
+): Promise<T> {
+  if (!isLive) {
+    warnOffline(label)
+    return sample()
+  }
+  return request<T>(endpoint, options)
+}
+
+/**
  * Try the server, fall back to a local implementation.
  *
  * NOTE: this is the blind fallback stage 3 replaces with an outbox. It keeps
- * every screen working before the backend exists, but it also means a real
+ * the lead flow working before the backend exists, but it also means a real
  * outage looks like success. Do not add new callers.
  */
 export async function requestOrLocal<T>(

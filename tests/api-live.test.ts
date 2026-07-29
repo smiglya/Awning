@@ -241,11 +241,9 @@ describe('contract drift', () => {
   })
 })
 
-describe('blind fallback (removed at stage 3)', () => {
-  it('still hides a total outage behind local data, and says so in telemetry', async () => {
+describe('outage handling', () => {
+  it('lets a projects outage reach the UI instead of faking success', async () => {
     const { api } = await withLiveApi()
-    const events: string[] = []
-    const stop = api.onTelemetry((event) => events.push(event.name))
 
     server.use(
       http.get(
@@ -254,10 +252,35 @@ describe('blind fallback (removed at stage 3)', () => {
       )
     )
 
-    const result = await api.listProjects()
+    // stage 2 depends on this: a silent sample-data fallback would make the
+    // error and retry states unreachable dead code
+    await expect(api.listProjects()).rejects.toThrow()
+  }, 20_000)
+
+  it('still hides a lead outage behind local storage — removed at stage 3', async () => {
+    const { api } = await withLiveApi()
+    const events: string[] = []
+    const stop = api.onTelemetry((event) => events.push(event.name))
+
+    server.use(
+      http.post(
+        `${TEST_API_ORIGIN}/api/v1/leads`,
+        () => new HttpResponse(null, { status: 500 })
+      )
+    )
+
+    const lead = await api.createLead(
+      {
+        businessName: 'A',
+        businessType: 'Laundromat',
+        needType: 'First site for the business',
+        contact: 'a@b.co',
+      },
+      'local-fallback'
+    )
     stop()
 
-    expect(result.sample).toBe(true)
+    expect(lead.local).toBe(true)
     expect(events).toContain('api_local_fallback')
-  })
+  }, 20_000)
 })
