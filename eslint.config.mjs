@@ -7,7 +7,15 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
 import prettier from 'eslint-config-prettier'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules'] },
+  /**
+   * Build output only. `.ssr` is the intermediate server bundle the prerender
+   * compiles and then throws away — linting it reports Rollup's output as if it
+   * were hand-written source, and every browser global in it as undefined.
+   *
+   * Flat config does not read .gitignore, so anything generated has to be named
+   * here as well as there.
+   */
+  { ignores: ['dist', '.ssr', 'coverage', 'node_modules'] },
 
   js.configs.recommended,
 
@@ -51,6 +59,16 @@ export default tseslint.config(
       // no silent `any` anywhere — the whole point of stage 0
       '@typescript-eslint/no-explicit-any': 'error',
     },
+  },
+
+  /**
+   * The prerender entry never reaches a browser, so it is never in the hot
+   * reload graph the react-refresh rule protects. Exporting `render`, `headFor`
+   * and `PRERENDER_PATHS` next to a component is the point of the file.
+   */
+  {
+    files: ['src/entry-server.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 
   // Node-side files outside the TS project: lint them, but untyped.

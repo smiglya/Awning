@@ -1,3 +1,4 @@
+import { isBrowser } from '../lib/dom'
 import type { StoredRequest } from './types'
 
 /**
@@ -11,6 +12,7 @@ export const SUPPORT_STORAGE_KEY = 'pr.support.v1'
 export const SUPPORT_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 export function readStoredRequest(): StoredRequest | null {
+  if (!isBrowser) return null
   try {
     const raw = window.localStorage.getItem(SUPPORT_STORAGE_KEY)
     if (!raw) return null
@@ -28,6 +30,7 @@ export function readStoredRequest(): StoredRequest | null {
 
 /** @returns false when storage is unavailable (private mode, quota). */
 export function writeStoredRequest(state: StoredRequest): boolean {
+  if (!isBrowser) return false
   try {
     window.localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(state))
     return true
@@ -37,6 +40,7 @@ export function writeStoredRequest(state: StoredRequest): boolean {
 }
 
 export function clearStoredRequest(): void {
+  if (!isBrowser) return
   try {
     window.localStorage.removeItem(SUPPORT_STORAGE_KEY)
   } catch {

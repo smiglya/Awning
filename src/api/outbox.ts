@@ -1,3 +1,4 @@
+import { isBrowser } from '../lib/dom'
 import { emit } from './telemetry'
 import type { LeadFields } from './types'
 
@@ -27,6 +28,7 @@ export interface OutboxEntry {
 }
 
 function read(): OutboxEntry[] {
+  if (!isBrowser) return []
   try {
     const raw = window.localStorage.getItem(OUTBOX_KEY)
     if (!raw) return []
@@ -39,6 +41,7 @@ function read(): OutboxEntry[] {
 }
 
 function write(entries: OutboxEntry[]): void {
+  if (!isBrowser) return
   try {
     window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(entries.slice(-MAX_ENTRIES)))
   } catch {
@@ -96,6 +99,7 @@ export function markAttempt(id: string, code: string): void {
 }
 
 export function clear(): void {
+  if (!isBrowser) return
   try {
     window.localStorage.removeItem(OUTBOX_KEY)
   } catch {

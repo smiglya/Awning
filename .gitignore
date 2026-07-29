@@ -1,5 +1,7 @@
 node_modules
 dist
+# intermediate server bundle the prerender builds and then discards
+.ssr
 .env
 .env.local
 *.local

@@ -19,6 +19,7 @@ function newKey(): string {
 }
 
 function readSession(key: string): string | null {
+  if (typeof window === 'undefined') return null
   try {
     return window.sessionStorage.getItem(key)
   } catch {
@@ -27,6 +28,7 @@ function readSession(key: string): string | null {
 }
 
 function writeSession(key: string, value: string): void {
+  if (typeof window === 'undefined') return
   try {
     window.sessionStorage.setItem(key, value)
   } catch {
@@ -45,6 +47,7 @@ export function beginLeadSubmission(): string {
 
 /** Call once the lead is accepted, so the next submission is a new request. */
 export function completeLeadSubmission(): void {
+  if (typeof window === 'undefined') return
   try {
     window.sessionStorage.removeItem(LEAD_KEY)
   } catch {

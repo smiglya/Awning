@@ -28,6 +28,7 @@ import {
   queueFailedLead,
 } from '../api/index'
 import { ErrorBoundary } from './ErrorBoundary'
+import { isBrowser } from '../lib/dom'
 import { clearStoredRequest, readStoredRequest, writeStoredRequest } from '../api/storage'
 import type { AuthorKind, ChatMessage, LeadFields, ThreadMessage } from '../api/types'
 import './ChatWidget.css'
@@ -187,10 +188,11 @@ function buildMailtoHref(
 function usePrefersReducedMotion(): boolean {
   // read synchronously on mount instead of setting state inside the effect
   const [reduced, setReduced] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    () => isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
 
   useEffect(() => {
+    if (!isBrowser) return
     const query = window.matchMedia('(prefers-reduced-motion: reduce)')
     const onChange = (event: MediaQueryListEvent) => setReduced(event.matches)
     query.addEventListener('change', onChange)

@@ -1,0 +1,3 @@
+Presence of this file tells GitHub Pages to serve the directory as-is instead of
+running it through Jekyll. Without it, anything whose name starts with an
+underscore is silently dropped from the published site.

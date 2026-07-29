@@ -3,20 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fafaf9" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Still Google-hosted. src/fonts.css holds the self-hosted @font-face
+         rules, ready to swap in as soon as public/fonts/*.woff2 are in place —
+         that removes a render-blocking third-party request and stops handing
+         visitor IPs to Google, which matters once EU traffic is in scope. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- The prerendered HTML carries each animation's start state as an inline
+         style, so without JavaScript the page would render invisible. This
+         undoes it for that case only; with JS the styles are authoritative and
+         motion animates from them as designed. -->
+    <noscript>
+      <style>
+        [style*='opacity:0'] {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+
     <title>Awning — websites for local NYC businesses</title>
     <meta
       name="description"
       content="Turnkey websites for New York local business. Flat $200–900, paid once. Live in one to two days."
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

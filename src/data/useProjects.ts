@@ -47,6 +47,15 @@ function load(signal: AbortSignal): Promise<CacheEntry> {
   return inflight
 }
 
+/**
+ * Prerender seam: fill the cache before renderToString so the built HTML
+ * carries real portfolio cards instead of skeletons, which is the whole point
+ * of prerendering for a crawler.
+ */
+export function seedProjectsCache(projects: Project[], sample = true): void {
+  cache = { projects, sample }
+}
+
 /** Test seam and retry hook: forget what was fetched. */
 export function clearProjectsCache(): void {
   cache = null

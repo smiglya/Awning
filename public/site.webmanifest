@@ -1,0 +1,16 @@
+{
+  "name": "Awning — websites for local NYC businesses",
+  "short_name": "Awning",
+  "description": "Turnkey websites for New York local business. Flat $200–900, live in one to two days.",
+  "start_url": ".",
+  "display": "browser",
+  "background_color": "#fafaf9",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

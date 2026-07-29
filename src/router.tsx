@@ -8,15 +8,38 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react'
+import { isBrowser } from './lib/dom'
 
 /**
  * Two-route History API router. Deliberately dependency-free — react-router
  * carries open high-severity advisories across the whole 7.x line and this
  * site needs exactly two paths.
  *
- * Note for deployment: clean URLs mean a static host must rewrite unknown
- * paths to index.html, or /work-map will 404 on a hard refresh.
+ * Paths inside the app are always base-relative ('/', '/work-map'). The base
+ * prefix only appears in real hrefs, which is what lets the same build serve
+ * from a domain root and from a GitHub Pages project subdirectory.
  */
+
+/** '/' on a domain root, '/Awning/' on a Pages project site. */
+const BASE = import.meta.env.BASE_URL || '/'
+const BASE_NO_SLASH = BASE.replace(/\/$/, '')
+
+/** Browser location -> app path. */
+export function toAppPath(pathname: string): string {
+  let path = pathname
+  if (BASE_NO_SLASH && path.startsWith(BASE_NO_SLASH)) {
+    path = path.slice(BASE_NO_SLASH.length)
+  }
+  // GitHub Pages serves directory indexes with a trailing slash
+  if (path.length > 1) path = path.replace(/\/+$/, '')
+  return path || '/'
+}
+
+/** App path -> href the browser can use. */
+export function toHref(appPath: string): string {
+  if (appPath === '/') return BASE
+  return `${BASE_NO_SLASH}${appPath}`
+}
 
 export interface RouterValue {
   path: string
@@ -28,18 +51,28 @@ const RouterContext = createContext<RouterValue>({
   navigate: () => {},
 })
 
-export function RouterProvider({ children }: { children: ReactNode }) {
-  const [path, setPath] = useState<string>(() => window.location.pathname || '/')
+export interface RouterProviderProps {
+  children: ReactNode
+  /** Supplied by the prerender, where there is no location to read. */
+  initialPath?: string
+}
+
+export function RouterProvider({ children, initialPath }: RouterProviderProps) {
+  const [path, setPath] = useState<string>(
+    () => initialPath ?? (isBrowser ? toAppPath(window.location.pathname) : '/')
+  )
 
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname || '/')
+    if (!isBrowser) return
+    const onPop = () => setPath(toAppPath(window.location.pathname))
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   const navigate = useCallback((to: string) => {
-    if (to !== window.location.pathname) {
-      window.history.pushState({}, '', to)
+    const href = toHref(to)
+    if (href !== window.location.pathname) {
+      window.history.pushState({}, '', href)
       setPath(to)
     }
     window.scrollTo({ top: 0 })
@@ -81,7 +114,7 @@ export function Link({ to, className, children, onClick }: LinkProps) {
   }
 
   return (
-    <a href={to} className={className} onClick={handleClick}>
+    <a href={toHref(to)} className={className} onClick={handleClick}>
       {children}
     </a>
   )

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "images": "node scripts/make-images.mjs",
+    "build": "npm run images && tsc --noEmit && node scripts/prerender.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -15,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "size-limit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:spa": "tsc --noEmit && vite build"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",
