@@ -1,6 +1,7 @@
 import SiteNav from '../components/SiteNav'
 import Footer from '../components/Footer'
 import ClientMap from '../components/ClientMap'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useChat } from '../components/ChatWidget'
 import { Link } from '../router'
 import { MAP_PAGE } from '../data/copy'
@@ -30,7 +31,11 @@ export default function MapPage() {
             </button>
           </div>
 
-          <ClientMap />
+          {/* the map is the most failure-prone thing on the page; a crash
+              here must not take the header, footer and CTA with it */}
+          <ErrorBoundary label="map" variant="inline">
+            <ClientMap />
+          </ErrorBoundary>
         </div>
       </main>
 

@@ -276,37 +276,4 @@ export async function requestOrSample<T>(
   return request<T>(endpoint, options)
 }
 
-/**
- * Try the server, fall back to a local implementation.
- *
- * NOTE: this is the blind fallback stage 3 replaces with an outbox. It keeps
- * the lead flow working before the backend exists, but it also means a real
- * outage looks like success. Do not add new callers.
- */
-export async function requestOrLocal<T>(
-  endpoint: Endpoint,
-  options: RequestOptions<T>,
-  localFallback: () => T,
-  label: string
-): Promise<T> {
-  if (!isLive) {
-    warnOffline(label)
-    return localFallback()
-  }
-  try {
-    return await request<T>(endpoint, options)
-  } catch (error) {
-    const code = error instanceof ApiError ? error.code : 'unknown'
-    const requestId = error instanceof ApiError ? error.requestId : undefined
-    emit({
-      name: 'api_local_fallback',
-      code,
-      detail: label,
-      ...(requestId ? { requestId } : {}),
-    })
-    console.warn(`[api] "${label}" failed (${code}), using local fallback`)
-    return localFallback()
-  }
-}
-
 export { ApiError, ContractError } from './errors'

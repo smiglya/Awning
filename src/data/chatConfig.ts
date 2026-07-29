@@ -30,6 +30,14 @@ export const CHAT_COPY = {
   resetLabel: 'Start over',
   fallbackReply:
     'Added to {ticket}. Replies here are automated, so send the email and a person picks it up.',
+
+  // Shown when the server refused the request. Says what actually happened,
+  // because a lead that silently went nowhere is the worst outcome here.
+  deliveryFailed:
+    'Not sent yet. Your answers are saved on this device and we keep retrying. Email is the sure route.',
+  deliveryRetry: 'Try sending now',
+  deliveryRetrying: 'Sending',
+  deliverySent: 'Sent. We have it.',
 }
 
 import type { LeadFields } from '../api/types'

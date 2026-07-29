@@ -19,7 +19,14 @@ import {
   SUPPORT_SCRIPT_LOW_BUDGET,
 } from '../data/chatConfig'
 import { STICKY_CTA } from '../data/copy'
-import { createLead, postMessage } from '../api/index'
+import {
+  createLead,
+  flushOutbox,
+  outbox,
+  postMessage,
+  queueFailedLead,
+} from '../api/index'
+import { ErrorBoundary } from './ErrorBoundary'
 import { clearStoredRequest, readStoredRequest, writeStoredRequest } from '../api/storage'
 import type { ChatMessage, LeadFields } from '../api/types'
 import './ChatWidget.css'
@@ -42,6 +49,12 @@ import './ChatWidget.css'
 const TICKET_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 type ChatView = 'form' | 'chat'
+
+/**
+ * What actually happened to the submission.
+ * 'local' means no backend is configured — a supported mode, not a failure.
+ */
+type Delivery = 'idle' | 'sent' | 'local' | 'failed'
 
 export interface ChatContextValue {
   open: () => void
@@ -149,6 +162,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0)
   const [scrolled, setScrolled] = useState(false)
   const [storageOk, setStorageOk] = useState(true)
+  const [delivery, setDelivery] = useState<Delivery>(() =>
+    initial && outbox.has(initial.ticket) ? 'failed' : 'idle'
+  )
+  const [retrying, setRetrying] = useState(false)
   // mirrors scriptIndex so the email route can appear without reading a ref
   const [scriptDone, setScriptDone] = useState(
     (initial?.scriptIndex ?? 0) >= SUPPORT_SCRIPT.length
@@ -266,8 +283,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Mint a local id first so the thread opens instantly, then let the
       // server override it if one is configured and answers with its own.
       let newTicket = makeTicketId()
-      const registered = await createLead(values, newTicket)
-      if (registered?.ticket) newTicket = registered.ticket
+      try {
+        const registered = await createLead(values, newTicket)
+        if (registered.ticket) newTicket = registered.ticket
+        setDelivery(registered.local ? 'local' : 'sent')
+      } catch (error) {
+        // The visitor did their part; the thread still opens. What changes is
+        // that the panel says the submission has not landed yet.
+        queueFailedLead(values, newTicket, error)
+        setDelivery('failed')
+      }
 
       const summary = [
         values.businessName,
@@ -308,6 +333,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [advanceScript, lead, pushMessage, ticket]
   )
 
+  const retryDelivery = useCallback(async () => {
+    setRetrying(true)
+    try {
+      const delivered = await flushOutbox()
+      if (delivered > 0) setDelivery('sent')
+    } finally {
+      setRetrying(false)
+    }
+  }, [])
+
+  // the browser coming back online is the one moment worth retrying unprompted
+  useEffect(() => {
+    if (delivery !== 'failed') return
+    const onOnline = () => {
+      void retryDelivery()
+    }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [delivery, retryDelivery])
+
   const reset = useCallback(() => {
     timers.current.forEach((id) => clearTimeout(id))
     timers.current = []
@@ -320,6 +365,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages([])
     setTyping(false)
     setView('form')
+    setDelivery('idle')
   }, [])
 
   useEffect(() => {
@@ -339,31 +385,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   return (
     <ChatContext.Provider value={value}>
       {children}
-      <ChatLauncher
-        ref={launcherRef}
-        isOpen={isOpen}
-        unread={unread}
-        scrolled={scrolled}
-        ticket={ticket}
-        onOpen={open}
-        onClose={close}
-      />
-      {isOpen && (
-        <ChatPanel
-          view={view}
+      <ErrorBoundary label="chat" variant="widget">
+        <ChatLauncher
+          ref={launcherRef}
+          isOpen={isOpen}
+          unread={unread}
+          scrolled={scrolled}
           ticket={ticket}
-          lead={lead}
-          messages={messages}
-          typing={typing}
-          storageOk={storageOk}
-          scriptDone={scriptDone}
-          threadRef={threadRef}
+          onOpen={open}
           onClose={close}
-          onSubmit={submitForm}
-          onSend={sendMessage}
-          onReset={reset}
         />
-      )}
+        {isOpen && (
+          <ChatPanel
+            view={view}
+            ticket={ticket}
+            lead={lead}
+            messages={messages}
+            typing={typing}
+            storageOk={storageOk}
+            scriptDone={scriptDone}
+            delivery={delivery}
+            retrying={retrying}
+            threadRef={threadRef}
+            onClose={close}
+            onSubmit={submitForm}
+            onSend={sendMessage}
+            onReset={reset}
+            onRetryDelivery={retryDelivery}
+          />
+        )}
+      </ErrorBoundary>
     </ChatContext.Provider>
   )
 }
@@ -426,11 +477,14 @@ interface ChatPanelProps {
   typing: boolean
   storageOk: boolean
   scriptDone: boolean
+  delivery: Delivery
+  retrying: boolean
   threadRef: RefObject<HTMLDivElement | null>
   onClose: () => void
   onSubmit: (values: LeadFields) => void
   onSend: (text: string) => void
   onReset: () => void
+  onRetryDelivery: () => void
 }
 
 function ChatPanel({
@@ -441,11 +495,14 @@ function ChatPanel({
   typing,
   storageOk,
   scriptDone,
+  delivery,
+  retrying,
   threadRef,
   onClose,
   onSubmit,
   onSend,
   onReset,
+  onRetryDelivery,
 }: ChatPanelProps) {
   return (
     <section className="chat-panel" role="dialog" aria-label="Get a price">
@@ -482,9 +539,12 @@ function ChatPanel({
           typing={typing}
           scriptDone={scriptDone}
           storageOk={storageOk}
+          delivery={delivery}
+          retrying={retrying}
           threadRef={threadRef}
           onSend={onSend}
           onReset={onReset}
+          onRetryDelivery={onRetryDelivery}
         />
       )}
     </section>
@@ -591,9 +651,12 @@ interface ThreadProps {
   typing: boolean
   scriptDone: boolean
   storageOk: boolean
+  delivery: Delivery
+  retrying: boolean
   threadRef: RefObject<HTMLDivElement | null>
   onSend: (text: string) => void
   onReset: () => void
+  onRetryDelivery: () => void
 }
 
 function Thread({
@@ -603,13 +666,17 @@ function Thread({
   typing,
   scriptDone,
   storageOk,
+  delivery,
+  retrying,
   threadRef,
   onSend,
   onReset,
+  onRetryDelivery,
 }: ThreadProps) {
   const [draft, setDraft] = useState('')
   const reducedMotion = usePrefersReducedMotion()
-  const showEmailRoute = scriptDone || !storageOk
+  // a failed delivery makes the email route the point, not an afterthought
+  const showEmailRoute = scriptDone || !storageOk || delivery === 'failed'
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -619,6 +686,20 @@ function Thread({
 
   return (
     <>
+      {delivery === 'failed' && (
+        <div className="chat-undelivered" role="alert">
+          <p className="chat-undelivered-text">{CHAT_COPY.deliveryFailed}</p>
+          <button
+            className="chat-undelivered-retry"
+            type="button"
+            onClick={onRetryDelivery}
+            disabled={retrying}
+          >
+            {retrying ? CHAT_COPY.deliveryRetrying : CHAT_COPY.deliveryRetry}
+          </button>
+        </div>
+      )}
+
       <div className="chat-thread" ref={threadRef}>
         <div aria-live="polite">
           {messages.map((message) => (

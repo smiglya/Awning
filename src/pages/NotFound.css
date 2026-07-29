@@ -1,0 +1,50 @@
+.notfound {
+  background-color: var(--paper);
+  color: var(--ink);
+  padding-top: 140px;
+  padding-bottom: var(--section-pad);
+}
+
+.notfound-inner {
+  max-width: 100%;
+}
+
+.notfound-code {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--grey-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.notfound-title {
+  margin: 22px 0 0;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  max-width: 18ch;
+}
+
+.notfound-text {
+  margin: 22px 0 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--grey-1);
+  max-width: 48ch;
+}
+
+.notfound-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+@media (min-width: 768px) {
+  .notfound {
+    padding-top: 200px;
+  }
+}

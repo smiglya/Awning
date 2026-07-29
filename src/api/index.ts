@@ -1,11 +1,15 @@
+import { isLive, warnOffline } from './config'
 import { ENDPOINTS } from './endpoints'
-import { requestOrLocal, requestOrSample } from './http'
+import { request, requestOrSample } from './http'
 import { readStoredRequest } from './storage'
 import {
   beginLeadSubmission,
   completeLeadSubmission,
   messageIdempotencyKey,
 } from './idempotency'
+import * as outbox from './outbox'
+import { emit } from './telemetry'
+import { ApiError } from './errors'
 import {
   ChatMessageSchema,
   LeadSchema,
@@ -30,36 +34,88 @@ export { API_BASE, isLive, services } from './config'
 export { SUPPORT_STORAGE_KEY } from './storage'
 export { onTelemetry } from './telemetry'
 export { beginLeadSubmission, completeLeadSubmission } from './idempotency'
+export * as outbox from './outbox'
 export type * from './types'
+export type { OutboxEntry } from './outbox'
 
 /* ------------------------------------------------------------------- leads */
 
 /**
  * Register a new request.
  *
- * Carries an idempotency key that survives retries and reloads, so a double
- * click cannot produce two leads. Locally this only echoes the id back —
- * ChatWidget owns persistence either way.
+ * With no backend configured this mints a local reference, and the email route
+ * in the widget is the real delivery path — a supported mode the panel states
+ * outright. With a backend configured, a failure is thrown rather than
+ * swallowed: the caller queues it and tells the visitor the truth.
  */
 export async function createLead(fields: LeadFields, ticket: string): Promise<Lead> {
-  const lead = await requestOrLocal<Lead>(
-    ENDPOINTS.createLead,
-    {
-      service: 'leads',
-      body: { ...fields, source: 'site-chat' },
-      schema: LeadSchema,
-      idempotencyKey: beginLeadSubmission(),
-    },
-    () => ({ ticket, createdAt: Date.now(), local: true }),
-    'createLead'
-  )
+  if (!isLive) {
+    warnOffline('createLead')
+    return { ticket, createdAt: Date.now(), local: true }
+  }
+
+  const lead = await request<Lead>(ENDPOINTS.createLead, {
+    service: 'leads',
+    body: { ...fields, source: 'site-chat' },
+    schema: LeadSchema,
+    idempotencyKey: beginLeadSubmission(),
+  })
   // accepted: the next submission must be a genuinely new request
   completeLeadSubmission()
   return lead
 }
 
+/**
+ * Queue a lead the server would not take, so it survives a reload and can be
+ * retried when the network returns. Emits the event a dashboard watches.
+ */
+export function queueFailedLead(
+  fields: LeadFields,
+  ticket: string,
+  error: unknown
+): void {
+  const code = error instanceof ApiError ? error.code : 'unknown'
+  const requestId = error instanceof ApiError ? error.requestId : undefined
+  emit({
+    name: 'lead_submit_failed',
+    code,
+    ...(requestId ? { requestId } : {}),
+    detail: { ticket },
+  })
+  outbox.enqueue({ ticket, fields, idempotencyKey: beginLeadSubmission() })
+}
+
+/**
+ * Attempt every queued lead once.
+ * @returns how many the server accepted.
+ */
+export async function flushOutbox(): Promise<number> {
+  if (!isLive) return 0
+  let delivered = 0
+
+  for (const entry of outbox.list()) {
+    try {
+      await request<Lead>(ENDPOINTS.createLead, {
+        service: 'leads',
+        body: { ...entry.fields, source: 'site-chat' },
+        schema: LeadSchema,
+        idempotencyKey: entry.idempotencyKey,
+      })
+      outbox.remove(entry.id)
+      completeLeadSubmission()
+      delivered += 1
+      emit({ name: 'lead_delivered_from_outbox', detail: { ticket: entry.ticket } })
+    } catch (error) {
+      const code = error instanceof ApiError ? error.code : 'unknown'
+      outbox.markAttempt(entry.id, code)
+    }
+  }
+
+  return delivered
+}
+
 export function getLead(ticket: string): Promise<Lead | null> {
-  return requestOrLocal<Lead | null>(
+  return requestOrSample<Lead | null>(
     ENDPOINTS.getLead,
     { service: 'leads', params: { ticket }, schema: NullableLeadSchema },
     () => {
@@ -79,7 +135,7 @@ export function getLead(ticket: string): Promise<Lead | null> {
 /* ---------------------------------------------------------------- messages */
 
 export function postMessage(ticket: string, text: string): Promise<ChatMessage> {
-  return requestOrLocal<ChatMessage>(
+  return requestOrSample<ChatMessage>(
     ENDPOINTS.postMessage,
     {
       service: 'chat',
@@ -100,7 +156,7 @@ export function postMessage(ticket: string, text: string): Promise<ChatMessage> 
 }
 
 export function getThread(ticket: string): Promise<ThreadResponse> {
-  return requestOrLocal<ThreadResponse>(
+  return requestOrSample<ThreadResponse>(
     ENDPOINTS.getThread,
     { service: 'chat', params: { ticket }, schema: ThreadSchema },
     () => ({ messages: readStoredRequest()?.messages ?? [] }),
@@ -119,10 +175,6 @@ export interface ListProjectsOptions {
 /**
  * Portfolio and map pins. Paginated from the start — twelve sample records
  * today, but an unbounded list is a problem that only shows up in production.
- *
- * Uses requestOrSample, not requestOrLocal: with no backend configured the
- * sample set is the honest answer, but a configured backend that fails must
- * surface as an error the visitor can retry.
  */
 export function listProjects(options: ListProjectsOptions = {}): Promise<ProjectList> {
   const { page = 1, limit = 50, signal } = options
@@ -141,8 +193,9 @@ export function listProjects(options: ListProjectsOptions = {}): Promise<Project
 
 /* -------------------------------------------------------------- newsletter */
 
+/** Throws on a live failure: a silent "subscribed" would be a lie. */
 export function subscribe(email: string): Promise<SubscribeResponse> {
-  return requestOrLocal<SubscribeResponse>(
+  return requestOrSample<SubscribeResponse>(
     ENDPOINTS.subscribe,
     {
       service: 'newsletter',

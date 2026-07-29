@@ -257,10 +257,8 @@ describe('outage handling', () => {
     await expect(api.listProjects()).rejects.toThrow()
   }, 20_000)
 
-  it('still hides a lead outage behind local storage — removed at stage 3', async () => {
+  it('no longer hides a lead outage behind local storage', async () => {
     const { api } = await withLiveApi()
-    const events: string[] = []
-    const stop = api.onTelemetry((event) => events.push(event.name))
 
     server.use(
       http.post(
@@ -269,18 +267,19 @@ describe('outage handling', () => {
       )
     )
 
-    const lead = await api.createLead(
-      {
-        businessName: 'A',
-        businessType: 'Laundromat',
-        needType: 'First site for the business',
-        contact: 'a@b.co',
-      },
-      'local-fallback'
-    )
-    stop()
-
-    expect(lead.local).toBe(true)
-    expect(events).toContain('api_local_fallback')
+    // Stage 3 removed the blind fallback. A refused lead must reach the caller
+    // so it can be queued and the visitor told the truth, rather than being
+    // reported as a success nobody ever receives.
+    await expect(
+      api.createLead(
+        {
+          businessName: 'A',
+          businessType: 'Laundromat',
+          needType: 'First site for the business',
+          contact: 'a@b.co',
+        },
+        'local-fallback'
+      )
+    ).rejects.toThrow()
   }, 20_000)
 })
