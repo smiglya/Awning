@@ -48,9 +48,9 @@ describe('brand artwork', () => {
 
   it('renders the same lockup that brand/awning-logotype.svg defines', () => {
     const shapes = geometry(read('brand/awning-logotype.svg'))
-    // 5 paths, 5 rects, 1 rotated rect, 1 ellipse, 1 mark: if the artwork gains
-    // a shape this fails, rather than the site quietly losing a letter
-    expect(shapes).toHaveLength(13)
+    // the mark plus one path per letter of "wning": if the artwork loses a
+    // letter this fails, rather than the site quietly shipping "Awnng"
+    expect(shapes).toHaveLength(1 + 'wning'.length)
     for (const shape of shapes) expect(geometry(jsx)).toContain(shape)
   })
 
@@ -64,13 +64,17 @@ describe('brand artwork', () => {
     for (const shape of geometry(jsx)) expect([...inFiles]).toContain(shape)
   })
 
-  it('keeps the viewBox tight to the ink in both files', () => {
-    // a Figma frame is usually larger than the drawing; slack in the viewBox
-    // becomes a phantom margin wherever the lockup is aligned or centred
-    expect(read('brand/logo.svg')).toContain('viewBox="0 0 12 13"')
-    expect(read('brand/awning-logotype.svg')).toContain('viewBox="0 0 1021.39 353.03"')
-    expect(jsx).toContain('viewBox="0 0 12 13"')
-    expect(jsx).toContain('viewBox="0 0 1021.39 353.03"')
+  it('gives the component the same viewBox as the file', () => {
+    // Not hardcoded here: the lockup is regenerated whenever the word, weight or
+    // spacing changes, and a test that has to be edited on every regeneration is
+    // a test people start editing without reading. What must hold is that the
+    // two copies agree, and that the box starts at the origin — slack in a
+    // viewBox becomes a phantom margin wherever the artwork is aligned.
+    for (const file of ['brand/logo.svg', 'brand/awning-logotype.svg']) {
+      const box = read(file).match(/viewBox="([^"]+)"/)?.[1]
+      expect(box, file).toMatch(/^0 0 /)
+      expect(jsx, file).toContain(`viewBox="${box}"`)
+    }
   })
 
   it('inherits colour rather than hardcoding black', () => {

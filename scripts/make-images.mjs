@@ -161,7 +161,7 @@ function drawOgImage() {
 
   canvas.draw(
     artwork('awning-logotype.svg'),
-    { x: margin, y: 115, width: measure, height: 304 },
+    { x: margin, y: 150, width: measure, height: 250 },
     INK
   )
   // the mark alone, reversed out of the band
