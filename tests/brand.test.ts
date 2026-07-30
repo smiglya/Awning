@@ -82,9 +82,39 @@ describe('brand artwork', () => {
 
   it('inherits colour rather than hardcoding black', () => {
     // the lockup is reversed out of ink in the footer and the OG card's band
-    for (const file of ['brand/logo.svg', 'brand/awning-logotype.svg']) {
+    for (const file of [
+      'brand/logo.svg',
+      'brand/awning-logotype.svg',
+      'brand/letter-i-key.svg',
+    ]) {
       expect(read(file), file).toContain('fill="currentColor"')
       expect(read(file), file).not.toContain('fill="black"')
     }
+  })
+
+  it('agrees with the generator about where the key sits', () => {
+    /**
+     * The key's baseline and x-height cannot be recovered from its outline — the
+     * tittle is above the x-height and nothing marks the baseline — so both are
+     * written down twice: in the SVG's comment and as constants the generator
+     * scales by. If the drawing moves and only one copy is updated, the key gets
+     * placed on the wrong line, and it fails quietly: still a plausible logo,
+     * just a letter sitting slightly off the baseline.
+     */
+    const svg = read('brand/letter-i-key.svg')
+    const generator = read('scripts/make-logotype.mjs')
+
+    const documented = {
+      baseline: Number(svg.match(/baseline\s+y = ([\d.]+)/)?.[1]),
+      xHeightTop: Number(svg.match(/x-height top\s+y = ([\d.]+)/)?.[1]),
+    }
+    const used = {
+      baseline: Number(generator.match(/baseline: ([\d.]+)/)?.[1]),
+      xHeightTop: Number(generator.match(/xHeightTop: ([\d.]+)/)?.[1]),
+    }
+
+    expect(documented.baseline).toBeGreaterThan(0)
+    expect(documented.xHeightTop).toBeGreaterThan(0)
+    expect(used).toEqual(documented)
   })
 })

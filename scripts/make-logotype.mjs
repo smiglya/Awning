@@ -4,29 +4,30 @@ import { fileURLToPath } from 'node:url'
 import { parseSvg, inkBounds } from './lib/svg-raster.mjs'
 
 /**
- * Draws brand/awning-logotype.svg: the mark, then "wning" as five drawn letters.
+ * Assembles brand/awning-logotype.svg: the mark, then "wning".
  *
  *   node scripts/make-logotype.mjs
  *
- * Not set in a typeface. Each letter is constructed here, from one metric system
- * and a small set of primitives, so the lockup can carry things a typeface will
- * not give it:
+ * Writes src/components/Brand.tsx as well — see the note down there.
+ *
+ * Not set in a typeface. Four of the five letters are constructed here from one
+ * metric system and a handful of primitives; the fifth is supplied artwork.
  *
  *   w  pointed apexes — the mark's own V geometry, twice over
  *   n  a plain geometric arch: the quiet letter, and it appears twice
- *   i  a key. Ring bow, stepped teeth, blade. The studio sells turnkey sites,
- *      and this is the one place the offer is in the logo and not the copy
+ *   i  a key, from brand/letter-i-key.svg. The studio sells turnkey sites, and
+ *      this is the one place the offer is in the logo and not the copy. Drawn
+ *      externally and only fitted here, so it stays editable in a design tool
  *   g  circular bowl, with the descender cut on the mark's exact slope
  *
  * Proportions follow the original artwork rather than a text face: x-height at
  * 52% of cap height, which is geometric-sans territory (Futura sits at 48%,
- * Inter at 71%). A text face's large x-height makes a logotype look like body
- * copy set large, which is what the previous attempt here got wrong.
+ * Inter at 71%). A text face's large x-height makes a logotype read as body copy
+ * set large, which is what an earlier attempt here got wrong.
  *
- * What this fixes from the hand-assembled version: it had three baselines
- * (293.848, 296.016, 294.692), three x-height tops, and letter gaps of
- * 192/151/127/151. Here every letter shares BASE and TOP by construction, and
- * spacing is one number.
+ * Everything shares BASE, TOP and S by construction rather than by correction —
+ * the first hand-assembled version had three baselines and three x-heights — and
+ * the only judgement left is spacing, which is per letter and per side.
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -70,9 +71,8 @@ const BEARINGS = {
   // its top right corner is a point, so it can sit closer to what follows
   w: { left: 12, right: 8 },
   n: { left: 14, right: 14 },
-  // the key's teeth reach left into whatever precedes it, and a bare blade on
-  // the right has none of the mass that normally holds a gap open
-  i: { left: 26, right: 17 },
+  // flat-footed on both sides at the baseline, like the n
+  i: { left: 18, right: 18 },
   // round on both sides
   g: { left: 10, right: 10 },
 }
@@ -189,56 +189,35 @@ function letterN() {
 }
 
 /**
- * A key, which is what the original artwork was reaching for: a ring for the bow,
- * three teeth stepping off the blade, and the blade itself.
+ * Supplied artwork, not drawn here: brand/letter-i-key.svg is the key, and the
+ * only thing this does is fit it to the rest of the lowercase.
  *
- * The bow is a ring, not a disc, because a disc reads as an ordinary tittle. It
- * closes into one at small sizes, which is the right way round — the letter
- * degrades to a normal i in a 30px navigation bar and reads as a key on a card.
+ * Its x-height is scaled to match, which lands its stem within a unit of S — the
+ * drawing was already made to these proportions — and it is set on the shared
+ * baseline. Nothing else is touched.
  */
+const KEY_SOURCE = {
+  /** Both read off brand/letter-i-key.svg, and restated in its own comment. */
+  baseline: 205.92,
+  xHeightTop: 63.072,
+}
+
 function letterI() {
-  const bowOuter = 30
-  const bowInner = 13
-  const blade = S + 5 // a shade wider than a stem, so the teeth have a shoulder
-  const step = 14 // how much further left each tooth reaches than the last
-  const toothHeight = 18
-  const notch = 10 // the gap between teeth
-  const teeth = 3
+  const source = readFileSync(join(root, 'brand/letter-i-key.svg'), 'utf8')
+  const paths = [...source.matchAll(/<path d="([^"]+)"/g)].map((m) => m[1])
+  if (paths.length === 0) throw new Error('brand/letter-i-key.svg holds no paths')
 
-  const bowCentre = TOP - 19 - bowOuter
-  const paths = [
-    circle(blade / 2, bowCentre, bowOuter, 1) + circle(blade / 2, bowCentre, bowInner, -1),
-  ]
+  const sourceXH = KEY_SOURCE.baseline - KEY_SOURCE.xHeightTop
+  const scale = XH / sourceXH
+  // the source's ink starts at the origin, so this puts its baseline on ours
+  const dy = BASE - KEY_SOURCE.baseline * scale
 
-  // Separate prongs, not a solid staircase. The original artwork had them
-  // touching, which reads as a stepped serif; the gaps are what make it a key.
-  //
-  // They start below the blade's top rather than flush with it, so the first one
-  // reads as a tooth instead of as the blade's own shoulder.
-  const shoulder = 16
-  for (let i = 0; i < teeth; i += 1) {
-    const y = TOP + shoulder + i * (toothHeight + notch)
-    const reach = (i + 1) * step
-    paths.push(
-      polygon([
-        [-reach, y],
-        [blade, y],
-        [blade, y + toothHeight],
-        [-reach, y + toothHeight],
-      ])
-    )
+  let width = 0
+  for (const [, x] of source.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)) {
+    width = Math.max(width, Number(x) * scale)
   }
 
-  paths.push(
-    polygon([
-      [0, TOP],
-      [blade, TOP],
-      [blade, BASE],
-      [0, BASE],
-    ])
-  )
-
-  return { paths, width: blade, leftOverhang: teeth * step }
+  return { paths: paths.map((d) => transformPath(d, scale, 0, dy)), width }
 }
 
 /**
@@ -294,10 +273,21 @@ function markPath() {
     .join('')
 }
 
-/** Every coordinate this file emits is an absolute "x y" pair, so this is safe. */
-function shift(d, dx) {
-  return d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) => xy(Number(x) + dx, Number(y)))
+/**
+ * Scale then translate every coordinate in a path.
+ *
+ * Safe only because every path involved — the ones built above and the supplied
+ * key — uses absolute commands whose arguments are all "x y" pairs: M, L, C, Z.
+ * A relative command or an arc would need real parsing, and would come out of
+ * here silently wrong, so the two callers are the whole contract.
+ */
+function transformPath(d, scale, dx, dy) {
+  return d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) =>
+    xy(Number(x) * scale + dx, Number(y) * scale + dy)
+  )
 }
+
+const shift = (d, dx) => transformPath(d, 1, dx, 0)
 
 /**
  * The gap between the mark and the w is set by eye, not by metric. The mark's
@@ -320,8 +310,6 @@ function build() {
   for (const [name, letter] of word) {
     const bearing = BEARINGS[name]
     pen += bearing.left
-    // the key's teeth hang off the left of its blade, so it needs the room
-    pen += letter.leftOverhang ?? 0
     for (const d of letter.paths) paths.push(shift(d, pen))
     pen += letter.width + bearing.right
   }

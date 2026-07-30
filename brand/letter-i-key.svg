@@ -1,0 +1,30 @@
+<!-- The letter i, drawn as a key: tittle for the bow, a jagged bit, and a
+     blade on a flat foot. Supplied artwork — lifted out of the logotype export
+     awning-bit-jag-4t, translated so the ink starts at the origin, and otherwise
+     untouched. Edit this file to change the key.
+
+     Read by scripts/make-logotype.mjs, which scales it so its x-height matches
+     the rest of the lowercase and sets it on the shared baseline. Those two lines
+     cannot be recovered from the outline — the tittle sits above the x-height and
+     nothing marks the baseline — so they are recorded here and restated in the
+     generator:
+
+       baseline      y = 205.92
+       x-height top  y = 63.072   (x-height 142.848)
+
+     Three separate paths rather than one with three subpaths. The bit and the
+     blade overlap, and the two fill rules disagree about what an overlap inside a
+     single path means: nonzero fills it, even-odd punches a hole. Split apart,
+     they are a union under either rule, which is one fewer thing to get wrong in
+     a renderer that is not a browser. -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 99.993 205.92"
+  width="99.993"
+  height="205.92"
+  fill="currentColor"
+>
+  <path d="M0 205.92L0 186.624L37.612 186.624L37.612 63.072L62.38 63.072L62.38 186.624L99.993 186.624L99.993 205.92Z" />
+  <path d="M0 63.072L41.212 63.072L41.212 140.256L9.648 140.256L9.648 120.96L19.296 120.96L19.296 101.664L9.648 101.664L9.648 82.368L0 82.368Z" />
+  <path d="M46.828 35.136C42.028 35.136 37.9 33.408 34.444 29.952C30.988 26.496 29.26 22.368 29.26 17.568C29.26 12.768 30.988 8.64 34.444 5.184C37.9 1.728 42.028 0 46.828 0C51.82 0 55.948 1.728 59.212 5.184C62.668 8.64 64.396 12.768 64.396 17.568C64.396 22.368 62.668 26.496 59.212 29.952C55.948 33.408 51.82 35.136 46.828 35.136Z" />
+</svg>
