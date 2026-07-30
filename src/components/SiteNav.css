@@ -61,19 +61,28 @@
   color: var(--ink);
 }
 
+/* Height drives both: each viewBox is tight to the ink, so width follows from
+   the aspect ratio and there is no phantom padding to compensate for. */
 .logo-mark {
   display: block;
-  width: 24px;
   height: 24px;
+  width: auto;
   flex-shrink: 0;
 }
 
-.brand {
+/**
+ * Replaces the mark from 768px up rather than joining it.
+ *
+ * 26px, not the 20px that would match the old text label. In the lockup the
+ * capital runs the full height while the lowercase x-height is only 40% of it,
+ * so overall height overstates how large the name reads: 20px here would set
+ * the word at an 8px x-height, smaller than the 15px text it replaces.
+ */
+.logo-type {
   display: none;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
+  height: 26px;
+  width: auto;
+  flex-shrink: 0;
 }
 
 /* ---------------------------------------------------------- menu button */
@@ -209,9 +218,13 @@
     padding: 24px 32px;
   }
 
-  .brand,
-  .nav-map-link {
+  .nav-map-link,
+  .logo-type {
     display: block;
+  }
+
+  .logo-mark {
+    display: none;
   }
 
   .tags-pill {

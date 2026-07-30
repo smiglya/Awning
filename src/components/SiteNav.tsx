@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Plus } from 'lucide-react'
 import { Link, scrollToId, useRouter } from '../router'
 import { useChat } from './ChatWidget'
+import { LogoMark, Logotype } from './Brand'
 import { BRAND, HERO } from '../data/copy'
 import { EASE } from './motion-presets'
 import './SiteNav.css'
@@ -21,24 +22,6 @@ const MENU_ITEMS: MenuItem[] = [
   { label: 'Servers', to: '/', id: 'servers' },
   { label: 'Client map', to: '/work-map' },
 ]
-
-function LogoMark() {
-  return (
-    <svg
-      className="logo-mark"
-      width="26"
-      height="26"
-      viewBox="0 0 26 26"
-      fill="none"
-      aria-hidden="true"
-    >
-      <g transform="rotate(-35 13 13)">
-        <rect x="4" y="2" width="7" height="22" rx="3.5" fill="currentColor" />
-        <rect x="15" y="6.5" width="7" height="17.5" rx="3.5" fill="currentColor" />
-      </g>
-    </svg>
-  )
-}
 
 export default function SiteNav() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -97,9 +80,15 @@ export default function SiteNav() {
       transition={{ duration: 0.8, ease: EASE }}
     >
       <div className="nav-left" ref={menuRef}>
+        {/* The lockup already contains the name, so narrow screens get the mark
+            alone and wide ones get the whole thing — the same swap the text
+            version did, without setting the name in a different typeface than
+            the logo it sits beside. The name stays in the accessible tree as
+            text either way: an aria-hidden drawing is not a link label. */}
         <Link className="logo" to="/">
-          <LogoMark />
-          <span className="brand">{BRAND}</span>
+          <LogoMark className="logo-mark" />
+          <Logotype className="logo-type" />
+          <span className="sr-only">{BRAND}</span>
         </Link>
 
         <button

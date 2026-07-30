@@ -168,21 +168,24 @@
 
 /* ----------------------------------------------------------- wordmark */
 
-/* The clip height is in em of the wordmark's own size, so the crop stays
-   proportional no matter how long the brand name is. */
 .foot-wordmark-clip {
   overflow: hidden;
   margin-top: 24px;
 }
 
+/**
+ * Spans the content measure and takes its height from the artwork's own ratio.
+ * The text version was cropped at the baseline to sit flush with the page edge;
+ * the drawing is shown whole instead, because a deliberately cropped descender
+ * and a mistakenly cropped one look identical to everyone but the person who
+ * chose it.
+ */
 .foot-wordmark {
   display: block;
-  font-weight: 400;
-  letter-spacing: -0.045em;
-  line-height: 0.78;
-  white-space: nowrap;
+  width: 100%;
+  height: auto;
   color: var(--ink);
-  margin-bottom: -0.16em;
+  margin-bottom: 12px;
 }
 
 /* ============================================== desktop — 768px and up */

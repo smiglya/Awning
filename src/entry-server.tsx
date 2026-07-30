@@ -94,7 +94,10 @@ export function headFor(path: string, hasOgImage = false): string {
       `<meta property="og:image" content="${escapeAttr(image)}" />`,
       `<meta property="og:image:width" content="1200" />`,
       `<meta property="og:image:height" content="630" />`,
-      `<meta property="og:image:alt" content="Awning — websites for local NYC businesses, flat $200 to $900" />`,
+      // describes what the card actually shows; the price is in the description,
+      // not drawn on the image, and alt text that promises text nobody can find
+      // is worse than none
+      `<meta property="og:image:alt" content="The Awning logotype, black on off-white" />`,
       `<meta name="twitter:image" content="${escapeAttr(image)}" />`
     )
   }

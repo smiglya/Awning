@@ -1,20 +1,19 @@
 import { deflateSync } from 'node:zlib'
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseSvg, rasterise } from './lib/svg-raster.mjs'
 
 /**
  * Generates the two raster assets the site needs, with no dependencies and no
  * network: a 1200x630 Open Graph card and a hero video poster.
  *
- * Written as code rather than shipped as binaries so the brand geometry stays
- * editable and reviewable in the diff. Both are drawn from the same primitives
- * as the logo: two rounded bars rotated -35 degrees.
+ * Both are drawn from brand/*.svg, so the artwork has exactly one home. This
+ * script used to carry its own copy of the mark's geometry, which made four
+ * copies in the repo and no way to notice when one fell behind.
  *
- * What it draws is geometry only — no type, because rasterising a font without
- * a library is not worth the code. A designed card with the headline on it will
- * always beat this one, so an existing file is never overwritten: drop your own
- * public/og-image.png in and it survives every build. Pass --force to redraw.
+ * An existing file is never overwritten: drop a designed card into
+ * public/og-image.png and it survives every build. Pass --force to redraw.
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -22,6 +21,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const INK = [0x0a, 0x0a, 0x0a]
 const PAPER = [0xfa, 0xfa, 0xf9]
 const GREY = [0xde, 0xde, 0xda]
+
+const artwork = (name) => parseSvg(readFileSync(join(root, 'brand', name), 'utf8')).shapes
 
 /* ------------------------------------------------------------ PNG encoding */
 
@@ -79,16 +80,7 @@ function encodePng(width, height, pixels) {
   ])
 }
 
-/* --------------------------------------------------------------- geometry */
-
-/** Signed distance to a rounded rectangle centred at the origin. */
-function roundedRectSdf(x, y, halfW, halfH, radius) {
-  const dx = Math.abs(x) - (halfW - radius)
-  const dy = Math.abs(y) - (halfH - radius)
-  const ox = Math.max(dx, 0)
-  const oy = Math.max(dy, 0)
-  return Math.hypot(ox, oy) + Math.min(Math.max(dx, dy), 0) - radius
-}
+/* ------------------------------------------------------------- compositing */
 
 function mix(a, b, t) {
   return [
@@ -98,98 +90,102 @@ function mix(a, b, t) {
   ]
 }
 
-/**
- * Draws the logo mark: two rounded bars, rotated -35 degrees together.
- * @returns coverage 0..1 for antialiasing
- */
-function markCoverage(px, py, cx, cy, scale) {
-  const angle = (-35 * Math.PI) / 180
-  // inverse-rotate the sample point into the mark's own space
-  const dx = px - cx
-  const dy = py - cy
-  const cos = Math.cos(-angle)
-  const sin = Math.sin(-angle)
-  const lx = (dx * cos - dy * sin) / scale
-  const ly = (dx * sin + dy * cos) / scale
+class Canvas {
+  constructor(width, height) {
+    this.width = width
+    this.height = height
+    this.pixels = Buffer.alloc(width * height * 3)
+  }
 
-  // matches the SVG in components/icons and SiteNav: 26x26 viewBox, two bars
-  const barA = roundedRectSdf(lx - (7.5 - 13), ly - (13 - 13), 3.5, 11, 3.5)
-  const barB = roundedRectSdf(lx - (18.5 - 13), ly - (15.25 - 13), 3.5, 8.75, 3.5)
-  const d = Math.min(barA, barB)
+  /** @param paint (x, y) => colour triple */
+  each(paint) {
+    for (let y = 0; y < this.height; y += 1) {
+      for (let x = 0; x < this.width; x += 1) {
+        const colour = paint(x, y)
+        const offset = (y * this.width + x) * 3
+        this.pixels[offset] = colour[0]
+        this.pixels[offset + 1] = colour[1]
+        this.pixels[offset + 2] = colour[2]
+      }
+    }
+  }
 
-  // one-pixel feather, expressed in mark units
-  const feather = 1 / scale
-  if (d <= -feather) return 1
-  if (d >= feather) return 0
-  return 0.5 - d / (2 * feather)
+  get(x, y) {
+    const offset = (y * this.width + x) * 3
+    return [this.pixels[offset], this.pixels[offset + 1], this.pixels[offset + 2]]
+  }
+
+  /** Composites artwork in one flat colour, respecting the antialiased edge. */
+  draw(shapes, box, colour) {
+    const coverage = rasterise(shapes, this.width, this.height, box)
+    for (let y = 0; y < this.height; y += 1) {
+      for (let x = 0; x < this.width; x += 1) {
+        const alpha = coverage[y * this.width + x]
+        if (alpha <= 0) continue
+        const blended = mix(this.get(x, y), colour, Math.min(alpha, 1))
+        const offset = (y * this.width + x) * 3
+        this.pixels[offset] = blended[0]
+        this.pixels[offset + 1] = blended[1]
+        this.pixels[offset + 2] = blended[2]
+      }
+    }
+  }
+
+  toPng() {
+    return encodePng(this.width, this.height, this.pixels)
+  }
 }
 
 /* ------------------------------------------------------------------ cards */
 
+/**
+ * The link preview. What matters here is that the brand name is legible at the
+ * size Slack and Telegram actually render — roughly 360px wide in a sidebar —
+ * so the lockup gets over half the width and everything else stays quiet.
+ */
 function drawOgImage() {
-  const width = 1200
-  const height = 630
-  const pixels = Buffer.alloc(width * height * 3)
+  const canvas = new Canvas(1200, 630)
+  const bandTop = 630 - 96
 
-  const markCx = 250
-  const markCy = 300
-  const markScale = 11 // 26 units * 11 ≈ 286px tall
+  canvas.each((x, y) => {
+    if (y >= bandTop) return INK
+    // faint plotting grid, same 64px module as the showcase section
+    if (x % 64 === 0 || y % 64 === 0) return mix(PAPER, GREY, 0.55)
+    return PAPER
+  })
 
-  const barTop = height - 96
+  // One margin governs everything: the lockup spans the full measure and the
+  // signature mark hangs off the same left edge.
+  const margin = 160
+  const measure = 1200 - margin * 2
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      let colour = PAPER
+  canvas.draw(
+    artwork('awning-logotype.svg'),
+    { x: margin, y: 115, width: measure, height: 304 },
+    INK
+  )
+  // the mark alone, reversed out of the band
+  canvas.draw(artwork('logo.svg'), { x: margin, y: bandTop + 26, width: 44, height: 44 }, PAPER)
 
-      // faint plotting grid, same 64px module as the showcase section
-      if (x % 64 === 0 || y % 64 === 0) colour = mix(PAPER, GREY, 0.55)
-
-      // ink band along the bottom, echoing the marquee strip
-      if (y >= barTop) colour = INK
-
-      const coverage = markCoverage(x, y, markCx, markCy, markScale)
-      if (coverage > 0) colour = mix(colour, INK, coverage)
-
-      const offset = (y * width + x) * 3
-      pixels[offset] = colour[0]
-      pixels[offset + 1] = colour[1]
-      pixels[offset + 2] = colour[2]
-    }
-  }
-
-  return encodePng(width, height, pixels)
-}
-
-function drawPoster() {
-  // 16:9, matching the hero video, so the poster cannot shift layout
-  const width = 1280
-  const height = 720
-  const pixels = Buffer.alloc(width * height * 3)
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      let colour = PAPER
-      if (x % 80 === 0 || y % 80 === 0) colour = mix(PAPER, GREY, 0.4)
-
-      const coverage = markCoverage(x, y, width / 2, height / 2, 9)
-      if (coverage > 0) colour = mix(colour, GREY, coverage)
-
-      const offset = (y * width + x) * 3
-      pixels[offset] = colour[0]
-      pixels[offset + 1] = colour[1]
-      pixels[offset + 2] = colour[2]
-    }
-  }
-
-  return encodePng(width, height, pixels)
+  return canvas.toPng()
 }
 
 /**
- * Deliberately exits 0 even on failure. `npm run build` chains this before the
- * prerender, and both assets are cosmetic: the prerender already omits the
- * social tags when the card is absent, and a missing poster costs one blank
- * frame. Neither is worth failing a deploy over.
+ * Stands in for the hero video until enough of it has arrived, and permanently
+ * on a network that blocks the CDN. Deliberately quiet: it is a held breath
+ * before the animation, not a competing image.
  */
+function drawPoster() {
+  const canvas = new Canvas(1280, 720)
+
+  canvas.each((x, y) => (x % 80 === 0 || y % 80 === 0 ? mix(PAPER, GREY, 0.4) : PAPER))
+  canvas.draw(artwork('logo.svg'), { x: 490, y: 210, width: 300, height: 300 }, GREY)
+
+  return canvas.toPng()
+}
+
+/* ------------------------------------------------------------------- write */
+
 const force = process.argv.includes('--force')
 
 function emit(name, draw, note) {
@@ -203,6 +199,12 @@ function emit(name, draw, note) {
   console.log(`${name}  ${(png.length / 1024).toFixed(1)} kB  ${note}`)
 }
 
+/**
+ * Deliberately exits 0 even on failure. `npm run build` chains this before the
+ * prerender, and both assets are cosmetic: the prerender already omits the
+ * social tags when the card is absent, and a missing poster costs one blank
+ * frame. Neither is worth failing a deploy over.
+ */
 try {
   mkdirSync(join(root, 'public'), { recursive: true })
   emit('og-image.png', drawOgImage, '1200x630')

@@ -1,0 +1,11 @@
+<!-- Awning mark. Source of truth: mirrored as JSX in src/components/Brand.tsx
+     and rasterised into the Open Graph card by scripts/make-images.mjs. -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 12 13"
+  width="12"
+  height="13"
+  fill="currentColor"
+>
+  <path d="M6 0L12 13H10.3301L6.86603 7.13726L3.40193 13H0L6 0Z" />
+</svg>

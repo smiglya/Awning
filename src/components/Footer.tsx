@@ -3,15 +3,9 @@ import { motion } from 'motion/react'
 import { subscribe } from '../api/index'
 import { reveal, rise, stagger } from './motion-presets'
 import { IconArrow, SOCIAL_ICONS } from './icons'
-import { BRAND, FOOTER } from '../data/copy'
+import { Logotype } from './Brand'
+import { FOOTER } from '../data/copy'
 import './Footer.css'
-
-/**
- * The wordmark has to span the content width whatever the brand is called.
- * Sizing it by hand broke the moment the name changed length, so derive it:
- * ~83vw of content width divided by the rough advance width of the string.
- */
-const WORDMARK_VW = 83 / Math.max(BRAND.length * 0.55, 1)
 
 export default function Footer() {
   const [email, setEmail] = useState('')
@@ -114,15 +108,13 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* oversized wordmark, clipped by the bottom edge of the page */}
-      <div className="foot-wordmark-clip" aria-hidden="true">
+      {/* Oversized lockup, clipped by the bottom edge of the page. Previously
+          the name set in the body typeface at a size derived from its character
+          count — a guess that had to be re-tuned whenever the name changed. The
+          artwork scales exactly, so the guess is gone. */}
+      <div className="foot-wordmark-clip">
         <div className="container">
-          <span
-            className="foot-wordmark"
-            style={{ fontSize: `clamp(3rem, ${WORDMARK_VW.toFixed(2)}vw, 26rem)` }}
-          >
-            {BRAND}
-          </span>
+          <Logotype className="foot-wordmark" />
         </div>
       </div>
     </footer>

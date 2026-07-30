@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" width="26" height="26">
-  <rect width="26" height="26" fill="#fafaf9" />
-  <g transform="rotate(-35 13 13)" fill="#0a0a0a">
-    <rect x="4" y="2" width="7" height="22" rx="3.5" />
-    <rect x="15" y="6.5" width="7" height="17.5" rx="3.5" />
+<!-- Padded to a square: brand/logo.svg is tight to its ink, and a tab icon that
+     touches its own edges reads as clipped. Geometry otherwise identical. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20">
+  <rect width="20" height="20" fill="#fafaf9" />
+  <g transform="translate(4 3.5)" fill="#0a0a0a">
+    <path d="M6 0L12 13H10.3301L6.86603 7.13726L3.40193 13H0L6 0Z" />
   </g>
 </svg>
