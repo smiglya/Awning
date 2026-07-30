@@ -2,7 +2,7 @@ import { deflateSync } from 'node:zlib'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseSvg, rasterise } from './lib/svg-raster.mjs'
+import { parseSvg, rasterise, inkBounds } from './lib/svg-raster.mjs'
 
 /**
  * Generates the two raster assets the site needs, with no dependencies and no
@@ -155,13 +155,22 @@ function drawOgImage() {
   })
 
   // One margin governs everything: the lockup spans the full measure and the
-  // signature mark hangs off the same left edge.
+  // signature mark hangs off the same left edge. The box's own ratio has to match
+  // the artwork's, or the fit lands on height instead of width and centres the
+  // lockup — which quietly moves it off that shared left edge.
   const margin = 160
   const measure = 1200 - margin * 2
+  const lockup = artwork('awning-logotype.svg')
+  const bounds = inkBounds(lockup)
 
   canvas.draw(
-    artwork('awning-logotype.svg'),
-    { x: margin, y: 150, width: measure, height: 250 },
+    lockup,
+    {
+      x: margin,
+      y: 110,
+      width: measure,
+      height: measure / (bounds.width / bounds.height),
+    },
     INK
   )
   // the mark alone, reversed out of the band

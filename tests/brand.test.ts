@@ -47,21 +47,24 @@ describe('brand artwork', () => {
   })
 
   it('renders the same lockup that brand/awning-logotype.svg defines', () => {
-    const shapes = geometry(read('brand/awning-logotype.svg'))
-    // the mark plus one path per letter of "wning": if the artwork loses a
-    // letter this fails, rather than the site quietly shipping "Awnng"
-    expect(shapes).toHaveLength(1 + 'wning'.length)
-    for (const shape of shapes) expect(geometry(jsx)).toContain(shape)
+    // Every shape, not a count. A letter is several contours — the key alone is
+    // a bow, three teeth and a blade — so any expected total would have to be
+    // re-guessed on every design change, and a number nobody can derive is a
+    // number people update without checking.
+    for (const shape of geometry(read('brand/awning-logotype.svg'))) {
+      expect(geometry(jsx)).toContain(shape)
+    }
   })
 
-  it('holds nothing the artwork does not', () => {
-    // catches the other direction: a stray shape left in the component after an
-    // edit, which no amount of looking at brand/ would reveal
-    const inFiles = new Set([
+  it('holds exactly the artwork and nothing else', () => {
+    // Set equality, which subsumes the count: a shape dropped from the component
+    // fails above, a stray one left behind after an edit fails here, and neither
+    // is visible from reading brand/ alone.
+    const inFiles = [
       ...geometry(read('brand/logo.svg')),
       ...geometry(read('brand/awning-logotype.svg')),
-    ])
-    for (const shape of geometry(jsx)) expect([...inFiles]).toContain(shape)
+    ].sort()
+    expect(geometry(jsx)).toEqual(inFiles)
   })
 
   it('gives the component the same viewBox as the file', () => {

@@ -75,21 +75,22 @@
  *
  * Two corrections are baked into these numbers.
  *
- * The height is 30px, not the 20px that would match the old text label: the
- * capital runs the full cap height while the lowercase x-height is 55% of it,
- * so the box height overstates how large the name reads.
+ * 34px, not the 20px that would match the text label this replaced. The lockup
+ * is geometric: its x-height is 52% of the cap height and the descender adds a
+ * quarter again on top, so the box is far taller than the word reads. At 34px
+ * the x-height lands near 13px, which is where "wning" stays legible.
  *
- * The translate fixes vertical centring. The g's descender occupies the bottom
- * 22% of the viewBox, so flex centring lines up the box while leaving the word
- * itself sitting high by half that. The shift is in percent of the element's own
- * height, so it survives any change to the height above.
+ * The translate fixes vertical centring. The g's descender is the bottom 25% of
+ * the viewBox, so flex centring aligns the box and leaves the word itself high
+ * by half of that. The shift is a percentage of the element's own height, so it
+ * survives a change to the height above.
  */
 .logo-type {
   display: none;
-  height: 30px;
+  height: 34px;
   width: auto;
   flex-shrink: 0;
-  transform: translateY(11%);
+  transform: translateY(12%);
 }
 
 /* ---------------------------------------------------------- menu button */
