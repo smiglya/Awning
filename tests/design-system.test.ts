@@ -214,7 +214,24 @@ describe('colour', () => {
       ).toBe(true)
     }
 
-    expect(css).not.toContain('-webkit-text-stroke')
+    /**
+     * The rim survives on the two orange fills and nowhere else.
+     *
+     * -webkit-text-stroke inherits, so a rule on a button reaches every word
+     * inside it. On a light ground that turned 11px labels into orange type,
+     * which is the one thing orange may not do away from a conversion button —
+     * and the reason this is checked by exact selector list rather than by
+     * "there is no stroke anywhere".
+     */
+    const stroked = rules
+      .filter((rule) => rule.body.includes('-webkit-text-stroke'))
+      .flatMap((rule) => rule.selectors)
+
+    expect(stroked.sort()).toEqual(['.btn-primary', '.pill-cta'])
+
+    // paper, not accent: accent over --cta is 1.29:1 and simply is not there
+    const rim = css.match(/-webkit-text-stroke:\s*([^;]+);/)?.[1]
+    expect(rim).toBe('1px var(--paper)')
   })
 
   it('splits the letter hover by how dark the type already is', () => {

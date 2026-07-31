@@ -325,6 +325,32 @@ input {
   background-color: var(--cta-hover);
 }
 
+/**
+ * The two orange fills, and only those, rim their label in paper.
+ *
+ * An --accent rim on every button came off again, and the reason is worth
+ * keeping: -webkit-text-stroke inherits, so it reached every descendant, and at
+ * the 11 and 12px of a menu label or the launcher's offer line a half-pixel rim
+ * is a large share of the glyph. The words read as orange — which is the one
+ * thing orange may not do away from a conversion button.
+ *
+ * Paper is the right colour here for the opposite reason. --accent over --cta
+ * measures 1.29:1 and cannot be seen at all; paper measures 3.86, which is not
+ * enough for type and is ample for a rim. It separates the ink label from the
+ * orange behind it rather than blending into it, so the 5.13:1 the label works
+ * with survives the treatment instead of paying for it.
+ *
+ * paint-order puts the stroke behind the fill, so the rim grows outward and the
+ * letterform keeps its full mass. Without it the stroke centres on the outline
+ * and takes half its width out of the glyph, which at 14px is the difference
+ * between a rim and a thinner, muddier typeface.
+ */
+.pill-cta,
+.btn-primary {
+  -webkit-text-stroke: 1px var(--paper);
+  paint-order: stroke fill;
+}
+
 .pill-outline {
   background-color: transparent;
   color: var(--ink);
