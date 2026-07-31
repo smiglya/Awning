@@ -330,15 +330,32 @@ export const ADDONS = {
       key: 'after',
       head: 'After launch',
       items: [
+        /**
+         * One care plan per build tier, and the hours are what you are buying.
+         *
+         * They replaced a two-plan scheme at $99 and $199. Keeping both would
+         * have put five overlapping subscriptions on the page and quoted $199
+         * twice for different work, which is the fastest way to make a price
+         * list stop being believed.
+         *
+         * The hours divide by the same $48 as everything else — 4.1, 7.9 and 15
+         * — so a client can check the arithmetic on a retainer the same way
+         * they check it on a one-off. Nobody else in this range publishes that.
+         */
         {
-          name: 'Care Plan Basic: hosting, backups, 3 edits a month',
-          hours: null,
-          price: '$99 a month',
+          name: 'Care Plan Default: hosting, backups, security updates, small edits',
+          hours: '4.1 a month',
+          price: '$199 a month',
         },
         {
-          name: 'Care Plan Priority: priority queue, 10 edits, content updates',
-          hours: null,
-          price: '$199 a month',
+          name: 'Care Plan Pro: everything in Default, priority queue, content and photo updates',
+          hours: '7.9 a month',
+          price: '$379 a month',
+        },
+        {
+          name: 'Care Plan Pro+: everything in Pro, same-day edits, motion and feature work',
+          hours: '15 a month',
+          price: '$720 a month',
         },
         {
           name: 'Moving and redesigning the site you already have',
@@ -429,7 +446,7 @@ export const FAQ = {
     },
     {
       q: 'Will there be a monthly bill?',
-      a: 'Only if you choose one. Hosting runs roughly $0–15 a month, paid to the host, not to us. A Care Plan is $99 a month and it is optional — plenty of clients host it themselves and pay us nothing after launch.',
+      a: 'Only if you choose one. Hosting runs roughly $0–15 a month, paid to the host, not to us. Care Plans start at $199 a month and every one of them is optional — plenty of clients host it themselves and pay us nothing after launch.',
     },
     {
       q: 'Will I be number one on Google?',

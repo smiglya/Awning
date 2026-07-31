@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { ADDONS, FAQ, PRICING, SPECS } from '../src/data/copy'
+import { ADDONS, FAQ, HOURLY_RATE, PRICING, SPECS } from '../src/data/copy'
 import { ROUTE_META, jsonLdFor, metaFor } from '../src/seo'
 
 /**
@@ -425,6 +425,59 @@ describe('prices', () => {
     for (const item of items) {
       expect(item.price, item.name).toMatch(/\$|%/)
       expect(item.price.toLowerCase(), item.name).not.toContain('request')
+    }
+  })
+
+  it('offers one care plan per build tier', () => {
+    // A two-plan scheme at $99 and $199 came out when these went in: five
+    // overlapping subscriptions with $199 quoted twice for different work is
+    // the fastest way to make a price list stop being believed.
+    const after = ADDONS.groups.find((group) => group.key === 'after')
+    const plans = after?.items.filter((item) => item.name.startsWith('Care Plan')) ?? []
+
+    expect(plans.map((plan) => plan.price)).toEqual([
+      '$199 a month',
+      '$379 a month',
+      '$720 a month',
+    ])
+    for (const tier of PRICING.tiers) {
+      expect(
+        plans.some((plan) => plan.name.startsWith(`Care Plan ${tier.name}:`)),
+        `no care plan for ${tier.name}`
+      ).toBe(true)
+    }
+
+    // and the FAQ quotes the entry price rather than a retired one
+    const monthly = FAQ.items.find((item) => /monthly bill/i.test(item.q))
+    expect(monthly?.a).toContain('$199 a month')
+  })
+
+  it('adds every price up from its hours at one rate', () => {
+    /**
+     * The published hours are the differentiator — an owner is meant to check
+     * the arithmetic — so a line whose number does not follow from its hours
+     * undoes the point of the section.
+     *
+     * Six percent of slack, because §1 of the brief calls $48 a blended rate
+     * rather than a formula and several lines are rounded to a friendlier
+     * figure. That is wide enough for the rounding and nowhere near wide enough
+     * to hide a mistyped price.
+     */
+    for (const item of ADDONS.groups.flatMap((group) => group.items)) {
+      if (!item.hours) continue
+
+      // The first number from each, so a range compares its own low end
+      // against the other's. Stripping every non-digit instead welds "$250–550"
+      // into 250550 and the line reports an hourly rate in the thousands.
+      const hours = Number(item.hours.match(/[\d.]+/)?.[0])
+      const price = Number(item.price.replace(/,/g, '').match(/[\d.]+/)?.[0])
+      if (!Number.isFinite(hours) || !Number.isFinite(price)) continue
+
+      const implied = price / hours
+      expect(
+        Math.abs(implied - HOURLY_RATE) / HOURLY_RATE,
+        `${item.name} works out at $${implied.toFixed(2)} an hour`
+      ).toBeLessThan(0.06)
     }
   })
 
