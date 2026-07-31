@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Link, scrollToId, useRouter } from '../router'
 import { useChat } from './ChatWidget'
-import { LogoMark, Logotype } from './Brand'
+import { LogoCompact, LogoMark } from './Brand'
 import { IconCross, IconPlus } from './icons'
 import { BRAND, HERO } from '../data/copy'
 import { EASE } from './motion-presets'
@@ -88,7 +88,7 @@ export default function SiteNav() {
             text either way: an aria-hidden drawing is not a link label. */}
         <Link className="logo" to="/">
           <LogoMark className="logo-mark" />
-          <Logotype className="logo-type" />
+          <LogoCompact className="logo-type" />
           <span className="sr-only">{BRAND}</span>
         </Link>
 

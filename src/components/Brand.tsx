@@ -62,6 +62,75 @@ export function LogoMark({ className }: BrandArtProps) {
 }
 
 /**
+ * The mark and "wning" beside it, flat. Ratio 2.65.
+ *
+ * The navigation's lockup. The full one carries a gradient ray through two
+ * masks, and at the 34px the bar sets it at that ray is a couple of pixels per
+ * letter — all of its weight and none of its effect. These letters are the same
+ * forms, respaced to hold together small.
+ *
+ * The descender is the bottom 25% of the box, so the word sits high inside
+ * it: anything vertically centring this has to compensate. See .logo-type.
+ */
+export function LogoCompact({ className }: BrandArtProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 1024.3 386.75"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M197.334 276.038H214.323V292H197.334V276.038Z" fill="#666060" />
+      <path d="M163.355 276.038H180.344V292H163.355V276.038Z" fill="#0A0A0A" />
+      <path d="M146.367 276.038H163.356V292H146.367V276.038Z" fill="#666060" />
+      <path d="M95.4004 276.038H112.389V292H95.4004V276.038Z" fill="#0A0A0A" />
+      <path d="M112.391 276.038H129.379V292H112.391V276.038Z" fill="#0A0A0A" />
+      <path d="M129.379 276.038H146.368V292H129.379V276.038Z" fill="#0A0A0A" />
+      <path d="M163.355 260.075H180.344V276.037H163.355V260.075Z" fill="#666060" />
+      <path d="M129.379 260.075H146.368V276.037H129.379V260.075Z" fill="#0A0A0A" />
+      <path d="M146.367 260.075H163.356V276.037H146.367V260.075Z" fill="#0A0A0A" />
+      <path d="M180.344 260.075H197.332V276.037H180.344V260.075Z" fill="#0A0A0A" />
+      <path d="M163.355 244.113H180.344V260.076H163.355V244.113Z" fill="#0A0A0A" />
+      <path d="M180.344 244.113H197.332V260.076H180.344V244.113Z" fill="#0A0A0A" />
+      <path d="M112.391 244.124H129.379V260.086H112.391V244.124Z" fill="#FF6131" />
+      <path d="M129.379 228.161H146.368V244.123H129.379V228.161Z" fill="#FF3E04" />
+      <path d="M163.346 212.199H180.334V228.161H163.346V212.199Z" fill="#E54E20" />
+      <path
+        d="M0 292L135 0L270 292H232.578L154.261 156.58L75.9444 292H0Z"
+        fill="#0A0A0A"
+      />
+      <g transform="translate(270.9 72.55)">
+        <path
+          d="M0 66L35.615 218.2H67.365L85.8 139.416L104.236 218.2H135.985L171.6 66H143.871L120.111 167.54L96.35 66H75.25L51.49 167.54L27.73 66H0Z"
+          fill="#0A0A0A"
+        />
+        <path
+          d="M205.6 218.2V112C205.6 86.595 226.195 66 251.6 66H288.9C314.305 66 334.9 86.595 334.9 112V218.2H307.9V112C307.9 101.507 299.394 93 288.9 93H251.6C241.107 93 232.6 101.507 232.6 112V218.2H205.6Z"
+          fill="#0A0A0A"
+        />
+        <path
+          d="M441.9 218.2V112C441.9 86.595 462.495 66 487.9 66H525.2C550.605 66 571.2 86.595 571.2 112V218.2H544.2V112C544.2 101.507 535.694 93 525.2 93H487.9C477.407 93 468.9 101.507 468.9 112V218.2H441.9Z"
+          fill="#0A0A0A"
+        />
+        <path
+          d="M677.301 66C719.325 66 753.405 100.071 753.405 142.1V255.51C753.405 287.924 727.125 314.2 694.715 314.2H628.201V287.2H694.715C712.215 287.2 726.405 273.012 726.405 255.51V200.241C700.695 221.954 663.772 224.201 635.618 205.769C607.463 187.336 594.758 152.599 604.375 120.351C613.993 88.103 643.649 66 677.301 66ZM677.301 93C650.184 93 628.201 114.983 628.201 142.1C628.201 169.217 650.184 191.2 677.301 191.2C704.415 191.2 726.405 169.217 726.405 142.1C726.405 114.983 704.415 93 677.301 93Z"
+          fill="#0A0A0A"
+        />
+        <path
+          d="M388.4 39C399.169 39 407.9 30.27 407.9 19.5C407.9 8.73 399.169 0 388.4 0C377.63 0 368.9 8.73 368.9 19.5C368.9 30.27 377.63 39 388.4 39Z"
+          fill="#0A0A0A"
+        />
+        <path
+          d="M397.436 65.5098H379.436C376.674 65.5098 374.436 67.7483 374.436 70.5098V213.51C374.436 216.271 376.674 218.51 379.436 218.51H397.436C400.197 218.51 402.436 216.271 402.436 213.51V70.5098C402.436 67.7483 400.197 65.5098 397.436 65.5098Z"
+          fill="#0A0A0A"
+        />
+      </g>
+    </svg>
+  )
+}
+
+/**
  * The mark and "wning" beside it, with the ray swept across the word.
  *
  * Ratio 2.51. The g's descender is the bottom 24% of the box, so

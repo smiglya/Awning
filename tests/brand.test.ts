@@ -38,10 +38,12 @@ const RAY_ONLY = ['#FF3B00', '#D9D9D9']
 
 const BRAND_FILES = [
   'logo.svg',
+  'wning.svg',
   'logotype-source.svg',
   'logo-flat.svg',
   'logo-full.svg',
   'logo-invert.svg',
+  'logo-compact.svg',
 ]
 
 /** Strips comments, so prose about a colour is never mistaken for the colour. */
@@ -128,18 +130,25 @@ describe('brand artwork', () => {
   })
 
   it('holds exactly the artwork and nothing else', () => {
-    // Set equality, which subsumes the count: a shape dropped from the component
-    // fails above, a stray one left behind after an edit fails here, and neither
-    // is visible from reading brand/ alone.
-    //
-    // Against the source rather than logo-flat.svg, because the component now
-    // carries the whole drawing — the mask shapes and the ray paths included,
-    // which the flat file exists precisely to strip.
-    const inFiles = [
+    /**
+     * Set equality, which subsumes the count: a shape dropped from the component
+     * fails above, a stray one left behind after an edit fails here, and neither
+     * is visible from reading brand/ alone.
+     *
+     * Sets rather than arrays, because the mark is drawn twice — once alone and
+     * once inside the compact lockup — and counting would make that look like a
+     * duplicate rather than the reuse it is.
+     *
+     * Against the sources rather than the flat file: the component carries the
+     * whole drawing, mask shapes and ray paths included, which is exactly what
+     * logo-flat.svg exists to strip.
+     */
+    const inFiles = new Set([
       ...geometry(body(read('brand/logo.svg'))),
       ...geometry(body(read('brand/logotype-source.svg'))),
-    ].sort()
-    expect(geometry(jsx)).toEqual(inFiles)
+      ...geometry(body(read('brand/wning.svg'))),
+    ])
+    expect(new Set(geometry(jsx))).toEqual(inFiles)
   })
 
   it('gives the component the same viewBox as the file', () => {
@@ -250,8 +259,8 @@ describe('logo variants', () => {
     expect(full).toContain('<radialGradient')
     expect(full).toContain('#FF6131')
 
-    // and nowhere else: the flat and reversed files are what the site uses
-    for (const file of ['logo-flat.svg', 'logo-invert.svg']) {
+    // and nowhere else: these are the variants the site and the rasteriser use
+    for (const file of ['logo-flat.svg', 'logo-invert.svg', 'wning.svg']) {
       const svg = body(read(`brand/${file}`))
       for (const orange of ['#E54E20', '#FF3E04', '#FF6131']) {
         expect(svg, `${file} paints the logo ${orange}`).not.toContain(orange)
@@ -291,12 +300,15 @@ describe('logo variants', () => {
    * by forty times that.
    */
   it('sets the navigation clear space from the n', () => {
-    const paths = topLevelPaths(read('brand/logo-flat.svg'))
-    const letters = paths.slice(-6)
+    // Measured against the compact lockup, which is what the bar actually
+    // renders. It was the full one until the navigation swapped, and a ratio
+    // left pointing at the wrong drawing is off by four percent — invisible in
+    // review and wrong on every screen.
+    const letters = topLevelPaths(read('brand/wning.svg'))
     const nHeight = coarseBounds(letters[1] ?? '').height
 
     const lockupHeight = Number(
-      read('brand/logo-flat.svg').match(/viewBox="0 0 [\d.]+ ([\d.]+)"/)?.[1]
+      read('brand/logo-compact.svg').match(/viewBox="0 0 [\d.]+ ([\d.]+)"/)?.[1]
     )
     const fromArtwork = nHeight / lockupHeight
 
