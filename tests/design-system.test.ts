@@ -65,8 +65,13 @@ describe('colour', () => {
      * brief asked for it to be reconciled to --muted and it was, until the
      * reference files arrived carrying the original. A reference file is not
      * corrected, so the value stands and this is where that is written down.
+     *
+     * The other two belong to the footer lockup's gradient ray: its hot stop
+     * and the carrier fill beneath it, the latter only ever seen at ten percent
+     * through the gradient laid over it. Neither is a token — nothing can
+     * reference them, they exist inside one drawing.
      */
-    const ARTWORK_ONLY = ['#6C6C6C']
+    const ARTWORK_ONLY = ['#6C6C6C', '#D9D9D9', '#FF3B00']
 
     for (const file of [...SOURCE_FILES, 'index.html']) {
       const allowed =

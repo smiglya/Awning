@@ -20,7 +20,13 @@ const read = (path: string) => readFileSync(resolve(__dirname, '..', path), 'utf
  * wrote three of them, so one run replaced a hand-drawn file with a
  * reconstruction of it and said nothing.
  */
-const REFERENCE = ['logo.svg', 'wning.svg', 'logo-flat.svg', 'logo-compact.svg']
+const REFERENCE = [
+  'logo.svg',
+  'wning.svg',
+  'logo-flat.svg',
+  'logo-compact.svg',
+  'Awning-footer.svg',
+]
 
 /** Strips comments, so prose about a colour is never mistaken for the colour. */
 const body = (markup: string) => markup.replace(/<!--[\s\S]*?-->/g, '')
@@ -143,7 +149,7 @@ describe('brand artwork', () => {
     // Every shape, not a count. The dissolve alone is fifteen cells, so any
     // expected total would have to be re-guessed on every design change, and a
     // number nobody can derive is a number people update without checking.
-    for (const file of ['logo.svg', 'logo-compact.svg', 'logo-flat.svg']) {
+    for (const file of ['logo.svg', 'logo-compact.svg', 'Awning-footer.svg']) {
       for (const shape of geometry(body(read(`brand/${file}`)))) {
         expect(geometry(jsx), file).toContain(shape)
       }
@@ -162,7 +168,7 @@ describe('brand artwork', () => {
     const inFiles = new Set([
       ...geometry(body(read('brand/logo.svg'))),
       ...geometry(body(read('brand/logo-compact.svg'))),
-      ...geometry(body(read('brand/logo-flat.svg'))),
+      ...geometry(body(read('brand/Awning-footer.svg'))),
     ])
     expect(new Set(geometry(jsx))).toEqual(inFiles)
   })
@@ -171,7 +177,7 @@ describe('brand artwork', () => {
     // A reference file is not corrected. Measuring the ink and tightening the
     // box would be an improvement the designer did not ask for, and it would
     // shift every alignment that depends on the frame.
-    for (const file of ['logo.svg', 'logo-compact.svg', 'logo-flat.svg']) {
+    for (const file of ['logo.svg', 'logo-compact.svg', 'Awning-footer.svg']) {
       const box = read(`brand/${file}`).match(/viewBox="([^"]+)"/)?.[1]
       expect(box, file).toMatch(/^0 0 /)
       expect(jsx, file).toContain(`viewBox="${box}"`)
@@ -190,7 +196,7 @@ describe('brand artwork', () => {
 
 /* ------------------------------------------------------------ derived files */
 
-describe('the derived pair', () => {
+describe('derived and consumed', () => {
   it('reverses out of ink, in palette colours', () => {
     const invert = body(read('brand/logo-invert.svg'))
     expect(invert).toContain('fill="#0A0A0A"')
@@ -198,12 +204,22 @@ describe('the derived pair', () => {
     expect(invert).not.toContain('currentColor')
   })
 
-  it('keeps the gradient ray to the file the card reads', () => {
-    // logo-full.svg is the Figma export, not the reference: it carries a ray
-    // the reference does not have. The comment in the file says so, and this
-    // pins the difference so nobody assumes the two agree.
-    expect(body(read('brand/logo-full.svg'))).toContain('<radialGradient')
+  it('keeps the ray to the footer lockup', () => {
+    // The bar sets logo-compact.svg at 34px, where a ray is a couple of pixels
+    // per letter. The foot sets Awning-footer.svg across the whole measure,
+    // which is the one place on the site big enough to carry it.
+    expect(body(read('brand/Awning-footer.svg'))).toContain('<radialGradient')
     expect(body(read('brand/logo-compact.svg'))).not.toContain('<radialGradient')
+  })
+
+  it('draws the Open Graph card from the reference, not a copy of it', () => {
+    // There were two lockups for a while — the reference and an earlier Figma
+    // export the card read instead — so the site and its own link preview
+    // disagreed about the logo. One drawing now, and the card reads it.
+    const images = read('scripts/make-images.mjs')
+    expect(images).toContain("colouredArtwork('Awning-footer.svg')")
+    expect(images).not.toContain('logo-full.svg')
+    expect(images).not.toContain('logotype-source.svg')
   })
 })
 

@@ -273,7 +273,7 @@ function drawOgImage() {
   // lockup — which quietly moves it off that shared left edge.
   const margin = 160
   const measure = 1200 - margin * 2
-  const { byColour, frame } = colouredArtwork('logo-full.svg')
+  const { byColour, frame } = colouredArtwork('Awning-footer.svg')
   const box = {
     x: margin,
     y: 110,
@@ -289,7 +289,7 @@ function drawOgImage() {
   // a carrier fill under a gradient at 0.9, so the flat stand-in is that
   // composite worked out once: nine parts of the gradient's middle stop to one
   // of the grey beneath it.
-  const source = readFileSync(join(root, 'brand/logo-full.svg'), 'utf8')
+  const source = readFileSync(join(root, 'brand/Awning-footer.svg'), 'utf8')
   canvas.drawMasked(
     shapesOf(maskPaths(source, 0)),
     shapesOf(maskPaths(source, 1)),

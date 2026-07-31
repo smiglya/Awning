@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fafaf9" />
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- PNG, and the type says so. The supplied file arrived named .svg while
+         being a Figma raster export; serving it as image/svg+xml is how a
+         favicon renders as nothing in the browsers that check. -->
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="271x293" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Still Google-hosted. src/fonts.css holds the self-hosted @font-face
