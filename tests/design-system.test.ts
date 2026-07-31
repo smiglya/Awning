@@ -392,9 +392,14 @@ describe('prices', () => {
   })
 
   it('leaves no trace of the old $200–900 offer', () => {
-    // including the places nobody re-reads: meta description, OG tags, alt text
+    /**
+     * Including the places nobody re-reads: meta description, OG tags, alt
+     * text, and the web manifest — which is where the retired range survived
+     * longest, because it is read by an install prompt and by nothing else a
+     * person looks at while repricing.
+     */
     const stale = [/\$200\b/, /\$500\b/, /\$900\b/, /200[–-]900/, /\$450\b/, /\$700\b/]
-    for (const file of [...SOURCE_FILES, 'index.html']) {
+    for (const file of [...SOURCE_FILES, 'index.html', 'public/site.webmanifest']) {
       // the design brief's own hour counts are not prices
       if (file.endsWith('design-system.test.ts')) continue
       for (const pattern of stale) {
