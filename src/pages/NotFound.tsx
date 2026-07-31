@@ -1,6 +1,5 @@
 import SiteNav from '../components/SiteNav'
 import Footer from '../components/Footer'
-import Letters from '../components/Letters'
 import { Link } from '../router'
 import './NotFound.css'
 
@@ -20,9 +19,7 @@ export default function NotFound() {
       <main className="notfound">
         <div className="container notfound-inner">
           <p className="notfound-code">404</p>
-          <h1 className="notfound-title" aria-label={TITLE}>
-            <Letters text={TITLE} />
-          </h1>
+          <h1 className="notfound-title">{TITLE}</h1>
           <p className="notfound-text">
             The link may be old, or the address may have a typo in it. Both routes below
             definitely work.

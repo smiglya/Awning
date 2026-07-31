@@ -131,23 +131,46 @@ describe('colour', () => {
     }
   })
 
-  it('keeps --accent inside pixel art and the ring on ink', () => {
-    // 2.87 against paper: it fails even the 3:1 floor for interface elements,
-    // so it may never be text or a border on the light ground
-    const declarations: string[] = []
+  it('keeps --accent to the three places that earn it', () => {
+    /**
+     * 2.87 against paper: it fails even the 3:1 floor for interface elements,
+     * so it may never be ordinary text or a border on the light ground.
+     *
+     * Checked by rule rather than by property, because the property alone
+     * cannot tell the difference between the two `color` declarations that
+     * matter here — one paints a hovered character and is fine, one would paint
+     * a paragraph and is not.
+     */
+    const rules: string[] = []
     for (const file of STYLE_FILES) {
-      // anchored per line and stopped at braces, so a selector above the rule
-      // cannot be mistaken for the property inside it
-      for (const [, prop] of read(file).matchAll(
-        /^\s*([a-z-]+)\s*:\s*[^;{}]*var\(--accent\)/gm
-      )) {
-        declarations.push(`${file}: ${prop}`)
+      const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '')
+      for (const match of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+        if (!match[2]?.includes('var(--accent)')) continue
+        rules.push(`${file}: ${match[1]?.trim().replace(/\s+/g, ' ')}`)
       }
     }
-    expect(declarations).toEqual(['src/index.css: outline-color'])
+
+    expect(rules).toEqual([
+      'src/index.css: .on-ink :focus-visible, .section-dark :focus-visible',
+      'src/index.css: ::highlight(awning-grey)',
+    ])
 
     // and in the drawings, only as a fill on a group of cells
     expect(read('src/components/icons.tsx')).toContain('<g fill="var(--accent)">')
+  })
+
+  it('splits the letter hover by how dark the type already is', () => {
+    // black to --cta-hover, grey to --accent. One orange for both would flatten
+    // the difference exactly where the eye is looking.
+    const css = read('src/index.css')
+    expect(css).toMatch(/::highlight\(awning-ink\)\s*\{\s*color: var\(--cta-hover\);/)
+    expect(css).toMatch(/::highlight\(awning-grey\)\s*\{\s*color: var\(--accent\);/)
+
+    const hook = read('src/components/useLetterHover.ts')
+    // the orange fill is exempt: an orange character on it is a hole
+    expect(hook).toContain('.pill-cta, .btn-primary')
+    // and the effect is enhancement only — no API, no highlight, no error
+    expect(hook).toContain("!('highlights' in CSS)")
   })
 
   it('shows a focus ring on both grounds', () => {

@@ -197,37 +197,29 @@ input {
 /* --------------------------------------------------- headings, letter by letter */
 
 /**
- * Each letter of a heading answers the cursor on its own.
+ * Every letter on the site answers the cursor, one at a time.
+ *
+ * Black type goes to --cta-hover, grey type to --accent. The split matters:
+ * the greys are already quieter than the ink, and sending both to one orange
+ * would flatten that difference exactly where the eye is looking.
+ *
+ * These are ranges, not elements. src/components/useLetterHover.ts finds the
+ * character under the pointer and hands it to the Custom Highlight API, which
+ * is why there is no per-letter markup anywhere — wrapping every character in a
+ * span would have cost this page some fifteen thousand elements to light one.
  *
  * This is the one orange that is not a conversion mark, and it earns the
- * exception the same way the focus ring does: it tracks the pointer. Exactly
- * one letter is lit at a time — the one physically under the cursor — so a
- * screen never gains a second orange spot competing for attention from across
- * the page, which is the thing §5.3 is actually protecting.
- *
- * hover: hover keeps it off touch screens, where a tap would otherwise leave a
- * letter stuck orange until something else was pressed.
+ * exception the way the focus ring does: it tracks the pointer rather than
+ * advertising. Exactly one character is lit at any moment, so no screen gains a
+ * second orange spot competing from across the page — which is what §5.3 is
+ * protecting.
  */
-.hl-word {
-  /* an inline boundary is not a wrap opportunity, but say so anyway: a future
-     overflow-wrap on a heading would otherwise break words between letters */
-  white-space: nowrap;
+::highlight(awning-ink) {
+  color: var(--cta-hover);
 }
 
-.hl-letter {
-  transition: color 0.12s ease;
-}
-
-@media (hover: hover) {
-  .hl-letter:hover {
-    color: var(--cta);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hl-letter {
-    transition: none;
-  }
+::highlight(awning-grey) {
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------- screen-reader only */
@@ -288,7 +280,7 @@ input {
   padding: 14px 26px;
   border-radius: 999px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   text-decoration: none;
   transition:

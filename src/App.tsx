@@ -1,6 +1,7 @@
 import { MotionConfig } from 'motion/react'
 import { ChatProvider } from './components/ChatWidget'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useLetterHover } from './components/useLetterHover'
 import { RouterProvider, useRouter } from './router'
 import Landing from './pages/Landing'
 import MapPage from './pages/MapPage'
@@ -21,6 +22,10 @@ function Routes() {
 }
 
 export default function App() {
+  // one listener for the whole document, above the router so it survives
+  // navigation between the two pages
+  useLetterHover()
+
   return (
     // reducedMotion="user" strips transforms for visitors who ask for less
     // movement, so no individual animation needs its own guard

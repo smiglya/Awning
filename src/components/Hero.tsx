@@ -2,7 +2,6 @@ import { useRef } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { scrollToId } from '../router'
 import { useChat } from './ChatWidget'
-import Letters from './Letters'
 import { IconArrow } from './icons'
 import { HERO } from '../data/copy'
 import { EASE } from './motion-presets'
@@ -22,13 +21,7 @@ const VIDEO_SRC =
  */
 const VIDEO_POSTER = `${import.meta.env.BASE_URL}hero-poster.png`
 
-/**
- * Each line rides up out of its own clipping box — reads as type being set.
- *
- * The letters are split inside the clip rather than outside it, so the reveal
- * still animates one whole line at a time. Splitting above this would give the
- * browser sixty boxes to transform instead of two.
- */
+/** Each line rides up out of its own clipping box — reads as type being set. */
 function Line({ text, delay }: { text: string; delay: number }) {
   return (
     <span className="heading-line">
@@ -38,7 +31,7 @@ function Line({ text, delay }: { text: string; delay: number }) {
         animate={{ y: '0%' }}
         transition={{ duration: 1.05, delay, ease: EASE }}
       >
-        <Letters text={text} />
+        {text}
       </motion.span>
     </span>
   )
@@ -107,7 +100,7 @@ export default function Hero() {
             <span>{HERO.subtitle}</span>
           </motion.div>
 
-          <h1 className="heading" aria-label={`${HERO.line1} ${HERO.line2}`}>
+          <h1 className="heading">
             <Line text={HERO.line1} delay={0.75} />
             <Line text={HERO.line2} delay={0.87} />
           </h1>

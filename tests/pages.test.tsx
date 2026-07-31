@@ -43,15 +43,19 @@ describe('landing page', () => {
     ).toBeInTheDocument()
   })
 
-  it('keeps a heading readable after splitting it into letters', () => {
+  it('leaves headings as plain text, one node', () => {
     renderAt('/')
     const heading = screen.getByRole('heading', { level: 2, name: PRICING.h2 })
-    // every character still present, in order, for anything reading text
+
+    // The letter hover used to wrap every character in a span, which cost this
+    // page some fifteen thousand elements and forced an aria-label on every
+    // heading to stop screen readers spelling them out. It is a pointer-driven
+    // Range now, so the markup is back to a single text node — and this test is
+    // what notices if per-letter wrapping ever creeps back in.
     expect(heading.textContent).toBe(PRICING.h2)
-    // and each letter is its own hover target
-    expect(heading.querySelectorAll('.hl-letter').length).toBe(
-      PRICING.h2.replace(/\s/g, '').length
-    )
+    expect(heading.childNodes).toHaveLength(1)
+    expect(heading.childNodes[0]?.nodeType).toBe(Node.TEXT_NODE)
+    expect(heading.hasAttribute('aria-label')).toBe(false)
   })
 
   it('renders every pricing tier', () => {

@@ -1,7 +1,6 @@
 import { motion } from 'motion/react'
 import { Link } from '../router'
 import { useChat } from './ChatWidget'
-import Letters from './Letters'
 import Marquee from './Marquee'
 import { DEMO_COMPONENTS, type DemoKey } from './MotionDemos'
 import { reveal, rise, stagger } from './motion-presets'
@@ -103,8 +102,8 @@ function MotionShowcase() {
   return (
     <section className="section section-showcase" id="motion">
       <div className="container">
-        <motion.h2 className="h2" aria-label={SHOWCASE.h2} {...reveal(0, 26)}>
-          <Letters text={SHOWCASE.h2} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {SHOWCASE.h2}
         </motion.h2>
         <motion.p className="lede" {...reveal(0.1, 20)}>
           {SHOWCASE.sub}
@@ -147,8 +146,8 @@ function Pricing() {
   return (
     <section className="section" id="pricing">
       <div className="container">
-        <motion.h2 className="h2" aria-label={PRICING.h2} {...reveal(0, 26)}>
-          <Letters text={PRICING.h2} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {PRICING.h2}
         </motion.h2>
         <motion.p className="lede" {...reveal(0.1, 20)}>
           {PRICING.sub}
@@ -208,8 +207,8 @@ function AddOns() {
   return (
     <section className="section" id="addons">
       <div className="container">
-        <motion.h2 className="h2" aria-label={ADDONS.h2} {...reveal(0, 26)}>
-          <Letters text={ADDONS.h2} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {ADDONS.h2}
         </motion.h2>
         <motion.p className="lede" {...reveal(0.1, 20)}>
           {ADDONS.sub}
@@ -273,8 +272,8 @@ function Costs() {
       <div className="container">
         <div className="grid">
           <div className="col-9">
-            <motion.h2 className="h2 h2-dark" aria-label={COSTS.h2} {...reveal(0, 26)}>
-              <Letters text={COSTS.h2} />
+            <motion.h2 className="h2 h2-dark" {...reveal(0, 26)}>
+              {COSTS.h2}
             </motion.h2>
             <motion.div className="cost-body" {...stagger(0.08)}>
               {COSTS.paras.map((para) => (
@@ -298,8 +297,8 @@ function Risk() {
       <div className="container">
         <div className="grid">
           <div className="col-9">
-            <motion.h2 className="h2" aria-label={RISK.h2} {...reveal(0, 26)}>
-              <Letters text={RISK.h2} />
+            <motion.h2 className="h2" {...reveal(0, 26)}>
+              {RISK.h2}
             </motion.h2>
             <motion.p className="lede" {...reveal(0.12, 20)}>
               {RISK.body}
@@ -323,8 +322,8 @@ function Process() {
   return (
     <section className="section" id="process">
       <div className="container">
-        <motion.h2 className="h2" aria-label={PROCESS.h2} {...reveal(0, 26)}>
-          <Letters text={PROCESS.h2} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {PROCESS.h2}
         </motion.h2>
 
         <motion.ol className="steps" {...stagger(0.09)}>
@@ -359,8 +358,8 @@ function Portfolio() {
   return (
     <section className="section" id="work">
       <div className="container">
-        <motion.h2 className="h2" aria-label={PORTFOLIO.h2} {...reveal(0, 26)}>
-          <Letters text={PORTFOLIO.h2} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {PORTFOLIO.h2}
         </motion.h2>
         <motion.p className="lede" {...reveal(0.1, 20)}>
           {PORTFOLIO.sub}
@@ -442,8 +441,8 @@ function Specs() {
   return (
     <section className="section" id="details">
       <div className="container">
-        <motion.h2 className="h2 specs-heading" aria-label={SPECS.h2} {...reveal(0, 26)}>
-          <Letters text={SPECS.h2} />
+        <motion.h2 className="h2 specs-heading" {...reveal(0, 26)}>
+          {SPECS.h2}
         </motion.h2>
         <motion.dl className="specs" {...stagger(0.04)}>
           {SPECS.rows.map((row) => (
@@ -464,8 +463,8 @@ function Faq() {
   return (
     <section className="section" id="faq">
       <div className="container">
-        <motion.h2 className="h2 specs-heading" aria-label={FAQ.h2} {...reveal(0, 26)}>
-          <Letters text={FAQ.h2} />
+        <motion.h2 className="h2 specs-heading" {...reveal(0, 26)}>
+          {FAQ.h2}
         </motion.h2>
         <motion.div className="faq" {...stagger(0.05)}>
           {FAQ.items.map((item) => (
@@ -490,8 +489,8 @@ function OwnerSection() {
       <div className="container">
         <div className="grid owner-grid">
           <div className="col-5">
-            <motion.h2 className="h2" aria-label={OWNER_SECTION.h2} {...reveal(0, 26)}>
-              <Letters text={OWNER_SECTION.h2} />
+            <motion.h2 className="h2" {...reveal(0, 26)}>
+              {OWNER_SECTION.h2}
             </motion.h2>
             <motion.p className="lede" {...reveal(0.1, 20)}>
               {OWNER_SECTION.body}
@@ -528,8 +527,8 @@ function FinalCta() {
         <span className="cta-ghost-label">Photo — recent build</span>
       </div>
       <div className="container cta-inner">
-        <motion.h2 className="h2-xl" aria-label={FINAL_CTA.h2} {...reveal(0, 28)}>
-          <Letters text={FINAL_CTA.h2} />
+        <motion.h2 className="h2-xl" {...reveal(0, 28)}>
+          {FINAL_CTA.h2}
         </motion.h2>
         <motion.p className="cta-sub" {...reveal(0.1, 20)}>
           {FINAL_CTA.sub}
