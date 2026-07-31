@@ -2,13 +2,9 @@
 
      Edit brand/logotype-source.svg, not this file.
 
-     The supplied artwork with the frame tightened to the ink and the export's
-     three off-palette colours already corrected in the source. Gradient ray and
-     all three orange cells intact — this is the only variant that carries them,
-     and the only one meant for a renderer that is a browser.
-
-     Not for navigation: it cannot reverse out of ink, and our own rasteriser
-     drops every gradient in it silently. Use logo-flat.svg there. -->
+     The Figma export with its gradient ray, frame tightened to the ink. Only
+     the Open Graph card reads it. Note that this is NOT the reference artwork:
+     brand/logo-compact.svg is what the site renders, and it carries no ray. -->
 <svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 970.12 385.98"

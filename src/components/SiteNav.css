@@ -13,15 +13,15 @@
 
   /**
    * Clear space around the lockup is the height of the lowercase n, on all four
-   * sides. The bar sets the compact lockup, whose n is 152.2 units inside a
-   * 386.75-unit box — 0.3935 of whatever height it is set at. A ratio rather
-   * than a pixel count, so changing --logo-h below keeps the rule true.
+   * sides. In the reference artwork the n is 145.31 units inside a 386-unit
+   * box — 0.3765 of whatever height the lockup is set at. A ratio rather than a
+   * pixel count, so changing --logo-h below keeps the rule true.
    *
    * scripts/make-logotype.mjs prints this off the geometry every run and
    * tests/brand.test.ts fails if the two stop agreeing.
    */
   --logo-h: 24px;
-  --logo-clear: calc(var(--logo-h) * 0.3935);
+  --logo-clear: calc(var(--logo-h) * 0.3765);
 }
 
 .navbar > * {
@@ -109,17 +109,14 @@
  *
  * Two corrections are baked into these numbers.
  *
- * This is LogoCompact, not the full lockup. At this size the ray swept through
- * the full one is a couple of pixels per letter, so it costs its two masks and
- * ten gradients and shows nothing. The compact letters are the same forms,
- * respaced to hold together small.
+ * This is LogoCompact — the reference lockup, in its own colours.
  *
  * 34px, not the 20px that would match the text label this replaced. The lockup
  * is geometric and the descender adds a quarter again on top of the cap height,
  * so the box reads far taller than the word does. At 34px the n lands near
  * 13px, which is where "wning" stays legible.
  *
- * The translate fixes vertical centring. The g's descender is the bottom 25% of
+ * The translate fixes vertical centring. The g's descender is the bottom 24% of
  * the viewBox, so flex centring aligns the box and leaves the word itself high
  * by half of that. The shift is a percentage of the element's own height, so it
  * survives a change to the height above.
@@ -129,7 +126,7 @@
   height: var(--logo-h);
   width: auto;
   flex-shrink: 0;
-  transform: translateY(12.5%);
+  transform: translateY(12%);
 }
 
 /* ---------------------------------------------------------- menu button */

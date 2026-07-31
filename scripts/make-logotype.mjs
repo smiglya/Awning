@@ -4,34 +4,32 @@ import { fileURLToPath } from 'node:url'
 import { parseSvg, inkBounds } from './lib/svg-raster.mjs'
 
 /**
- * Derives every shipped logo variant from the supplied artwork.
+ * Builds src/components/Brand.tsx from the reference artwork.
  *
  *   node scripts/make-logotype.mjs
  *
- * Reads brand/logo.svg (the mark) and brand/logotype-source.svg (the lockup),
- * and writes brand/logo-flat.svg, brand/logo-full.svg, brand/logo-invert.svg
- * and src/components/Brand.tsx.
+ * REFERENCE FILES — this script reads them and must never write them:
  *
- * This script used to construct "wning" from primitives, because there was no
- * lockup to work from. There is one now, so it does not: a generator that
- * redraws letters a designer has already drawn is a second opinion nobody
- * asked for, and the two would diverge on the first kerning change.
+ *   brand/logo.svg           the mark, in colour
+ *   brand/logo-compact.svg   the lockup, in colour
+ *   brand/logo-flat.svg      the same lockup, all ink
+ *   brand/wning.svg          the wordmark on its own
  *
- * What it does instead is the work the export cannot do for itself.
+ * They are maintained by hand. An earlier version of this script generated
+ * three of the four, which meant one run silently replaced a designer's file
+ * with a reconstruction of it — the reason that rule is now the first thing
+ * written here.
  *
- *   Strips the scaffolding. The lockup carries defs, two nested masks, ten
- *   radial gradients and four full-bleed rects to sweep one gradient ray across
- *   the word. Our rasteriser supports none of them and the prerenderer inlines
- *   raw path geometry, so in both the ray does not degrade — it vanishes. Worse,
- *   the mask geometry spans x -2207 to x 26184: parsed naively that becomes the
- *   ink bounds and the lockup lands as a speck in the corner of the OG card.
+ * Everything the site renders comes from those files. The component is written
+ * rather than transcribed because the artwork has to be inline — it belongs in
+ * the prerendered HTML instead of arriving a request later — and copying
+ * thousands of characters of path data by hand is exactly how a logo ends up
+ * half-updated.
  *
- *   Takes the letters once. They exist twice in the export — as mask0's shape
- *   and again as the visible paths. Only the visible set is drawn.
- *
- *   Tightens the viewBox. Figma frames carry slack, and slack in a viewBox is a
- *   phantom margin that travels with the artwork into every layout that aligns
- *   it.
+ * It also still derives brand/logo-full.svg and brand/logo-invert.svg from
+ * brand/logotype-source.svg, which is the Figma export carrying the gradient
+ * ray. Only the Open Graph card reads those. That lineage now disagrees with
+ * the reference and is a loose end, not a feature.
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -43,11 +41,9 @@ const round = (n) => Number(n.toFixed(2))
 /**
  * The <path> elements that are direct children of <svg>, with their fills.
  *
- * Depth-aware rather than a regex, because the export nests a <g> inside a <g>
- * and a non-greedy match for a closing tag stops at the inner one — which
- * leaves the gradient rects in and half the document structure out. Anything
- * inside defs, a mask or a group is scaffolding by construction here: the
- * drawn artwork sits at the top level.
+ * Depth-aware rather than a regex, because the Figma export nests a <g> inside
+ * a <g> and a non-greedy match for a closing tag stops at the inner one — which
+ * leaves the gradient scaffolding in and half the structure out.
  */
 function topLevelPaths(source) {
   const body = source.replace(/<!--[\s\S]*?-->/g, '')
@@ -61,7 +57,7 @@ function topLevelPaths(source) {
     if (name === 'path') {
       if (depth === 0 && !isClose) {
         const d = tag.match(/\sd="([^"]+)"/)?.[1]
-        const fill = tag.match(/\sfill="([^"]+)"/)?.[1] ?? null
+        const fill = tag.match(/\sfill="([^"]+)"/)?.[1] ?? 'currentColor'
         if (d) out.push({ d, fill })
       }
       continue
@@ -74,155 +70,99 @@ function topLevelPaths(source) {
   return out
 }
 
-/** Ink bounds of a set of path data, through the same parser the OG card uses. */
+/** The viewBox as written, not as measured: a reference file is not corrected. */
+function viewBox(source) {
+  const box = source.match(/viewBox="([^"]+)"/)?.[1]
+  if (!box) throw new Error('no viewBox')
+  return box
+}
+
 function bounds(paths) {
   const probe = `<svg>${paths.map(({ d }) => `<path d="${d}"/>`).join('')}</svg>`
   return inkBounds(parseSvg(probe).shapes)
 }
 
-/**
- * The artwork has to start at the origin.
- *
- * Baking a translation into path data is possible but it rewrites every
- * coordinate in the file, which makes the next diff unreadable and puts a
- * rounding step between the designer's drawing and ours. A transform attribute
- * is the other option and our rasteriser rejects those on purpose. So: refuse,
- * and say what to do about it.
- */
-function requireOrigin(box, file) {
-  if (Math.abs(box.minX) > 0.01 || Math.abs(box.minY) > 0.01) {
-    throw new Error(
-      `${file}: ink starts at ${round(box.minX)}, ${round(box.minY)} rather than the ` +
-        `origin. Re-export with the frame tight to the artwork.`
-    )
-  }
+const jsxPaths = (paths, indent) =>
+  paths.map(({ d, fill }) => `${indent}<path d="${d}" fill="${fill}" />`).join('\n')
+
+/* --------------------------------------------------------------- the input */
+
+const markSource = read('brand/logo.svg')
+const navSource = read('brand/logo-compact.svg')
+const footSource = read('brand/logo-flat.svg')
+
+const markPaths = topLevelPaths(markSource)
+const navPaths = topLevelPaths(navSource)
+const footPaths = topLevelPaths(footSource)
+
+if (navPaths.length !== footPaths.length) {
+  throw new Error(
+    `logo-compact.svg and logo-flat.svg should be the same drawing in two ` +
+      `colourways, but hold ${navPaths.length} and ${footPaths.length} paths`
+  )
 }
 
-/* ------------------------------------------------------------------ input */
-
-const markPaths = topLevelPaths(read('brand/logo.svg'))
-const markBox = bounds(markPaths)
-requireOrigin(markBox, 'brand/logo.svg')
-
-const lockupPaths = topLevelPaths(read('brand/logotype-source.svg'))
-const lockupBox = bounds(lockupPaths)
-requireOrigin(lockupBox, 'brand/logotype-source.svg')
-
-const width = round(lockupBox.maxX)
-const height = round(lockupBox.maxY)
-const markWidth = round(markBox.maxX)
-const markHeight = round(markBox.maxY)
+/** The frame's height as the file declares it, not as the ink measures. */
+const navH = Number(viewBox(navSource).split(/\s+/)[3])
 
 /**
  * Clear space is the height of the lowercase n, on all four sides.
  *
- * The letters come out of the export in the order w, n, n, g, tittle, stem —
- * positionally the i sits between the two n's, but it is written last. So the
- * first n is the second letter path, and the assertion below is what catches a
- * re-export that reorders them: a wrong pick here does not break anything
- * visibly, it just quietly sets the wrong clear space everywhere at once.
+ * The lockup's paths come out in the order the export wrote them: fifteen
+ * dissolve cells, the mark, then w, n, n, g and the two pieces of the i. So the
+ * first n is the second of the last six, and the assertion is what catches a
+ * re-export that reorders them — a wrong pick here breaks nothing visibly, it
+ * just sets the wrong clear space everywhere at once.
  */
-const LETTERS = lockupPaths.slice(-6)
-const nBox = bounds([LETTERS[1]])
+const letters = navPaths.slice(-6)
+const nBox = bounds([letters[1]])
 if (nBox.height < 120 || nBox.height > 170) {
   throw new Error(
-    `expected the second letter path to be an n, got a shape ${round(nBox.height)} tall. ` +
-      `The export has been reordered — re-check which path is which.`
+    `expected the second letter path to be an n, got a shape ${round(nBox.height)} tall`
   )
 }
-const CLEAR = round(nBox.height)
-/** What SiteNav.css multiplies the set height by. tests/brand.test.ts checks it. */
-const CLEAR_RATIO = Number((CLEAR / height).toFixed(4))
 
-/* ---------------------------------------------------------------- writing */
+const clearRatio = Number((nBox.height / navH).toFixed(4))
 
-const flatPaths = (paths, indent) =>
-  paths.map(({ d }) => `${indent}<path d="${d}" />`).join('\n')
+/** The baseline is the n's foot; everything below it is the g's descender. */
+const descenderShare = Math.round(((navH - nBox.maxY) / navH) * 100)
 
-/**
- * logo-flat.svg — the working file, and the one with rules attached.
- *
- * No defs, mask, gradient or filter; absolute commands only; fill on the root
- * and nowhere else; viewBox tight to the ink from 0 0. Everything downstream
- * depends on those: the navigation colours it by inheritance, the prerender
- * inlines it, and scripts/lib/svg-raster.mjs is ours rather than a browser.
- */
-const flat = `<!-- Awning lockup, flat. GENERATED by scripts/make-logotype.mjs.
-
-     Edit brand/logotype-source.svg, not this file.
-
-     The supplied artwork with the gradient scaffolding removed and every fill
-     collapsed to currentColor. This is the variant for navigation, the footer,
-     the prerender and our own rasteriser — everywhere the surrounding CSS owns
-     the colour. The mark is never orange here: on the site orange means "press
-     this", and a logo is not a button.
-
-     viewBox is tight to the ink, so no empty space travels with the artwork. -->
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 ${width} ${height}"
-  width="${width}"
-  height="${height}"
-  fill="currentColor"
->
-${flatPaths(lockupPaths, '  ')}
-</svg>
-`
+/* ------------------------------------------------------- the derived pair */
 
 /**
- * logo-full.svg — the supplied drawing, colour and gradient ray intact.
- *
- * For the Open Graph card and marketing surfaces a browser renders. It is the
- * one variant that keeps the orange, and it keeps it because the designer put
- * it there: three cells of the dissolve and the ray across the word.
- *
- * Do not put this in the navigation. It cannot reverse out of a dark ground,
- * our rasteriser drops the ray without a word, and it spends orange somewhere
- * the palette does not budget for it.
+ * logo-full.svg and logo-invert.svg, from the Figma export rather than the
+ * reference. Only scripts/make-images.mjs reads them, for the Open Graph card.
  */
+const lockupPaths = topLevelPaths(read('brand/logotype-source.svg'))
+const lockupBox = bounds(lockupPaths)
+const fullW = round(lockupBox.maxX)
+const fullH = round(lockupBox.maxY)
+const clear = round(nBox.height)
+
 const source = read('brand/logotype-source.svg')
-const full = source
-  .replace(/<!--[\s\S]*?-->/, '')
-  .replace(/viewBox="0 0 [\d.]+ [\d.]+"/, `viewBox="0 0 ${width} ${height}"`)
-  .replace(/\swidth="[\d.]+"/, ` width="${width}"`)
-  .replace(/\sheight="[\d.]+"/, ` height="${height}"`)
-  .trimStart()
-
-const fullFile = `<!-- Awning lockup, full colour. GENERATED by scripts/make-logotype.mjs.
+const full = `<!-- Awning lockup, full colour. GENERATED by scripts/make-logotype.mjs.
 
      Edit brand/logotype-source.svg, not this file.
 
-     The supplied artwork with the frame tightened to the ink and the export's
-     three off-palette colours already corrected in the source. Gradient ray and
-     all three orange cells intact — this is the only variant that carries them,
-     and the only one meant for a renderer that is a browser.
+     The Figma export with its gradient ray, frame tightened to the ink. Only
+     the Open Graph card reads it. Note that this is NOT the reference artwork:
+     brand/logo-compact.svg is what the site renders, and it carries no ray. -->
+${source
+  .replace(/<!--[\s\S]*?-->/, '')
+  .replace(/viewBox="0 0 [\d.]+ [\d.]+"/, `viewBox="0 0 ${fullW} ${fullH}"`)
+  .replace(/\swidth="[\d.]+"/, ` width="${fullW}"`)
+  .replace(/\sheight="[\d.]+"/, ` height="${fullH}"`)
+  .trimStart()}`
 
-     Not for navigation: it cannot reverse out of ink, and our own rasteriser
-     drops every gradient in it silently. Use logo-flat.svg there. -->
-${full}`
-
-/**
- * logo-invert.svg — reversed, and self-contained.
- *
- * The other two inherit `color`, which is right wherever CSS reaches. It does
- * not reach an <img> tag, an email signature or a PDF, and in all three an
- * inheriting file renders ink on ink and looks like nothing at all. So this one
- * names both colours, and they are palette values: #0A0A0A and #FAFAF9.
- *
- * Clear space is built in, because the places that need this variant are the
- * places nothing on our side controls the padding.
- */
-const plateW = round(width + CLEAR * 2)
-const plateH = round(height + CLEAR * 2)
+const plateW = round(fullW + clear * 2)
+const plateH = round(fullH + clear * 2)
 
 const invert = `<!-- Awning lockup, reversed. GENERATED by scripts/make-logotype.mjs.
 
-     Edit brand/logotype-source.svg, not this file.
-
      Paper artwork on an ink plate, with one lowercase-n of clear space on all
-     four sides. The only variant that names its own colours, because it is the
-     one for places CSS cannot reach: an <img> tag, an email signature, a PDF.
-     Both values are from the palette — #0A0A0A is --ink, #FAFAF9 is --paper. -->
+     four sides. For the places CSS cannot reach — an <img> tag, an email
+     signature, a PDF — where a file that inherits colour renders ink on ink and
+     looks like nothing at all. Both values are from the palette. -->
 <svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 ${plateW} ${plateH}"
@@ -230,275 +170,89 @@ const invert = `<!-- Awning lockup, reversed. GENERATED by scripts/make-logotype
   height="${plateH}"
 >
   <rect width="${plateW}" height="${plateH}" fill="#0A0A0A" />
-  <g transform="translate(${CLEAR} ${CLEAR})" fill="#FAFAF9">
-${flatPaths(lockupPaths, '    ')}
+  <g transform="translate(${clear} ${clear})" fill="#FAFAF9">
+${lockupPaths.map(({ d }) => `    <path d="${d}" />`).join('\n')}
   </g>
 </svg>
 `
 
-writeFileSync(join(root, 'brand/logo-flat.svg'), flat)
-writeFileSync(join(root, 'brand/logo-full.svg'), fullFile)
+writeFileSync(join(root, 'brand/logo-full.svg'), full)
 writeFileSync(join(root, 'brand/logo-invert.svg'), invert)
-
-/* ---------------------------------------------------- the compact lockup */
-
-/**
- * The mark beside the standalone wordmark, for the navigation.
- *
- * The full lockup is a browser-only drawing: two masks and ten gradients to
- * sweep a ray across the word. At the 34px the bar sets it at, that ray is a
- * couple of pixels per letter — it costs its whole weight and shows nothing. So
- * the bar gets the flat letters instead, and the ray stays where it reads: the
- * foot, where the lockup spans the measure, and the Open Graph card.
- *
- * Both offsets are derived from the supplied lockup rather than eyeballed, so
- * the mark and the word keep the fit the designer drew:
- *
- *   dx  the gap the lockup leaves between the mark's right edge and the w. It
- *       is under a unit — they nearly touch at the baseline, where the triangle
- *       is widest, and open up above it. Guessing a "sensible" gap here is how
- *       a lockup ends up looking like two logos side by side.
- *
- *   dy  aligns the baselines. The lockup sits its baseline a unit and a quarter
- *       above the mark's foot rather than exactly on it, and that offset is
- *       carried over rather than flattened to zero.
- */
-const sourceMarkBox = bounds(lockupPaths.slice(0, -6))
-const sourceLetterBox = bounds(LETTERS)
-const sourceBaseline = bounds([LETTERS[1]]).maxY
-
-const wordPaths = topLevelPaths(read('brand/wning.svg'))
-if (wordPaths.length !== 6) {
-  throw new Error(`brand/wning.svg should hold six letters, holds ${wordPaths.length}`)
-}
-const wordBox = bounds(wordPaths)
-const wordBaseline = bounds([wordPaths[1]]).maxY
-
-const gap = sourceLetterBox.minX - sourceMarkBox.maxX
-const baselineLift = sourceMarkBox.maxY - sourceBaseline
-
-const dx = round(markBox.maxX + gap)
-const dy = round(markBox.maxY - baselineLift - wordBaseline)
-
-const compactWidth = round(dx + wordBox.maxX)
-const compactHeight = round(Math.max(markBox.maxY, dy + wordBox.maxY))
-const compactDescender = Math.round(
-  ((compactHeight - (markBox.maxY - baselineLift)) / compactHeight) * 100
-)
-
-/* --------------------------------------------------------- SVG to JSX */
-
-/**
- * The colour lockup, as JSX, with every id made unique per instance.
- *
- * This is the whole reason a converter exists rather than a paste. The artwork
- * carries twelve ids — two masks and ten gradients — and the page renders the
- * lockup twice, in the navigation and across the foot. Two inline SVGs
- * declaring the same id is not a lint warning: the second mask silently wins
- * for both, and the ray either doubles up or vanishes depending on the browser.
- * So the ids are React's useId, which is stable across the prerender and the
- * hydration that follows it — a random suffix would differ between the two and
- * mismatch on every load.
- *
- * @returns {{ markup: string, decls: string }}
- */
-function toJsx(source) {
-  let markup = source
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/^[\s\S]*?<svg[^>]*>/, '')
-    .replace(/<\/svg>\s*$/, '')
-    .trim()
-
-  // attributes SVG spells with a hyphen and JSX does not
-  markup = markup
-    .replace(/style="mask-type:alpha"/g, "style={{ maskType: 'alpha' }}")
-    .replace(/fill-opacity="/g, 'fillOpacity="')
-    .replace(/stop-color="/g, 'stopColor="')
-
-  const ids = [...new Set([...markup.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))]
-  const decls = []
-
-  ids.forEach((id, i) => {
-    // named for the job rather than the export's numbering, which is a Figma
-    // node id and means nothing here
-    const role = id.startsWith('mask')
-      ? id.startsWith('mask0')
-        ? 'maskLetters'
-        : 'maskRay'
-      : `ray${i - 2}`
-
-    decls.push(`  const ${role} = \`awning-${role}-\${uid}\``)
-    markup = markup
-      .replaceAll(` id="${id}"`, ` id={${role}}`)
-      .replaceAll(`="url(#${id})"`, `={\`url(#\${${role}})\`}`)
-  })
-
-  return {
-    markup: markup
-      .split('\n')
-      .map((line) => (line.trim() ? `      ${line.trim()}` : ''))
-      .join('\n'),
-    decls: decls.join('\n'),
-  }
-}
-
-const lockupJsx = toJsx(read('brand/logotype-source.svg'))
-
-const markJsx = markPaths
-  .map(({ d, fill }) => `      <path d="${d}" fill="${fill}" />`)
-  .join('\n')
-
-const wordJsx = wordPaths
-  .map(({ d, fill }) => `        <path d="${d}" fill="${fill}" />`)
-  .join('\n')
-
-/**
- * logo-compact.svg — the navigation's lockup, as a file.
- *
- * Nothing reads it: the bar renders LogoCompact from Brand.tsx. It exists so
- * the composition is a drawing a designer can open rather than a pair of
- * offsets buried in a generator, and so tests/brand.test.ts has something to
- * measure the navigation's clear space against.
- */
-const compact = `<!-- Awning lockup, compact. GENERATED by scripts/make-logotype.mjs.
-
-     Edit brand/logo.svg or brand/wning.svg, not this file.
-
-     The mark beside the standalone wordmark, flat. This is what the navigation
-     renders: at 34px the full lockup's gradient ray is a couple of pixels per
-     letter, so it carries its whole weight and shows nothing. The ray stays in
-     the foot and on the Open Graph card, where the artwork is big enough to
-     hold it.
-
-     Both offsets come off the supplied lockup rather than a judgement call —
-     the gap the mark leaves before the w, and the unit and a quarter the
-     baseline sits above the mark's foot. -->
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 ${compactWidth} ${compactHeight}"
-  width="${compactWidth}"
-  height="${compactHeight}"
-  fill="none"
->
-${markPaths.map(({ d, fill }) => `  <path d="${d}" fill="${fill}" />`).join('\n')}
-  <g transform="translate(${dx} ${dy})">
-${wordPaths.map(({ d, fill }) => `    <path d="${d}" fill="${fill}" />`).join('\n')}
-  </g>
-</svg>
-`
-
-writeFileSync(join(root, 'brand/logo-compact.svg'), compact)
 
 /* ------------------------------------------------------- the React component */
 
-/**
- * Brand.tsx is written from here too.
+const component = `/**
+ * The mark and the lockup, inline, exactly as the reference artwork draws them.
  *
- * The site needs the artwork inline — it inherits `color`, it is in the
- * prerendered HTML rather than one request behind it, and the prerender has no
- * browser to fetch anything with. That means a second copy of the geometry, and
- * transcribing thousands of characters of path data by hand is exactly how a
- * logo ends up half-updated. So don't transcribe it.
- */
-const descenderShare = Math.round(((height - markHeight) / height) * 100)
-
-const component = `import { useId } from 'react'
-
-/**
- * The mark and the lockup, inline and in the supplied colours.
- *
- * GENERATED by scripts/make-logotype.mjs. Run that after changing
- * brand/logo.svg or brand/logotype-source.svg; hand edits here are overwritten.
- * tests/brand.test.ts checks it against the files in brand/ in both directions.
+ * GENERATED by scripts/make-logotype.mjs from brand/logo.svg,
+ * brand/logo-compact.svg and brand/logo-flat.svg. Edit those; hand edits here
+ * are overwritten.
  *
  * Inline rather than <img src="/logo.svg">: the artwork is in the prerendered
  * HTML instead of arriving a request later, which for the thing at the top left
  * of every page is the difference between a logo and a gap where one will be.
- * Both are aria-hidden — they carry nothing a screen reader needs beyond the
- * brand name, which the surrounding markup provides as text.
+ * All three are aria-hidden — they carry nothing a screen reader needs beyond
+ * the brand name, which the surrounding markup provides as text.
  *
- * In colour, on purpose and against the brief. §6.2 says the mark is only ever
- * ink or paper and criterion 9 says the logo is never orange, the reasoning
- * being that orange has one job — "press this" — and spending it on a logo
- * blunts the button. That was overruled: the supplied artwork carries three
- * orange cells and a gradient ray across the word, and it ships as drawn.
- * brand/logo-flat.svg still exists for the rasteriser and for any surface that
- * needs the mark to inherit \`color\`.
+ * The fills are the artwork's own. Nothing here inherits \`color\`, so none of
+ * these can reverse out of a dark ground; brand/logo-invert.svg exists for that.
  */
 
 export interface BrandArtProps {
   className?: string
 }
 
-/**
- * The awning, dissolving into pixels at the lower right. Ratio ${round(markWidth / markHeight)}.
- */
+/** The awning, dissolving into pixels at the lower right. */
 export function LogoMark({ className }: BrandArtProps) {
   return (
     <svg
       className={className}
-      viewBox="0 0 ${markWidth} ${markHeight}"
+      viewBox="${viewBox(markSource)}"
       fill="none"
       aria-hidden="true"
       focusable="false"
     >
-${markJsx}
+${jsxPaths(markPaths, '      ')}
     </svg>
   )
 }
 
 /**
- * The mark and "wning" beside it, flat. Ratio ${round(compactWidth / compactHeight)}.
+ * The lockup in colour. This is what the navigation sets.
  *
- * The navigation's lockup. The full one carries a gradient ray through two
- * masks, and at the ${round(34)}px the bar sets it at that ray is a couple of pixels per
- * letter — all of its weight and none of its effect. These letters are the same
- * forms, respaced to hold together small.
- *
- * The descender is the bottom ${compactDescender}% of the box, so the word sits high inside
- * it: anything vertically centring this has to compensate. See .logo-type.
+ * The g's descender is the bottom ${descenderShare}% of the box, so the word sits high
+ * inside it: anything vertically centring this has to compensate. See
+ * .logo-type in SiteNav.css.
  */
 export function LogoCompact({ className }: BrandArtProps) {
   return (
     <svg
       className={className}
-      viewBox="0 0 ${compactWidth} ${compactHeight}"
+      viewBox="${viewBox(navSource)}"
       fill="none"
       aria-hidden="true"
       focusable="false"
     >
-${markJsx}
-      <g transform="translate(${dx} ${dy})">
-${wordJsx}
-      </g>
+${jsxPaths(navPaths, '      ')}
     </svg>
   )
 }
 
 /**
- * The mark and "wning" beside it, with the ray swept across the word.
- *
- * Ratio ${round(width / height)}. The g's descender is the bottom ${descenderShare}% of the box, so
- * the word sits high inside it: anything vertically centring this has to
- * compensate. See .logo-type in SiteNav.css.
- *
- * Every id is suffixed with useId. The page renders this twice — the navigation
- * and the foot — and two inline SVGs sharing a mask id do not warn, they just
- * pick one and break the other.
+ * The same lockup, all ink. The foot sets this one oversized and clipped by the
+ * bottom of the page, where the colour version would put a great deal of orange
+ * somewhere the palette does not budget for it.
  */
 export function Logotype({ className }: BrandArtProps) {
-  const uid = useId()
-${lockupJsx.decls}
-
   return (
     <svg
       className={className}
-      viewBox="0 0 ${width} ${height}"
+      viewBox="${viewBox(footSource)}"
       fill="none"
       aria-hidden="true"
       focusable="false"
     >
-${lockupJsx.markup}
+${jsxPaths(footPaths, '      ')}
     </svg>
   )
 }
@@ -507,20 +261,18 @@ ${lockupJsx.markup}
 writeFileSync(join(root, 'src/components/Brand.tsx'), component)
 
 console.log(
-  `brand/logo-flat.svg        ${width} x ${height}  ${lockupPaths.length} paths`
-)
-console.log(`brand/logo-full.svg        ${width} x ${height}  gradient ray kept`)
-console.log(`brand/logo-invert.svg      ${plateW} x ${plateH}  paper on ink`)
-console.log(
-  `src/components/Brand.tsx   mark ${markWidth} x ${markHeight} (${markPaths.length} paths), ` +
-    `lockup ratio ${round(width / height)}, descender ${descenderShare}%`
+  `reference   logo.svg          ${viewBox(markSource)}  ${markPaths.length} paths`
 )
 console.log(
-  `LogoCompact                ${compactWidth} x ${compactHeight}  ` +
-    `ratio ${round(compactWidth / compactHeight)}, descender ${compactDescender}%, ` +
-    `set at dx ${dx} dy ${dy}`
+  `reference   logo-compact.svg  ${viewBox(navSource)}  ${navPaths.length} paths, colour`
 )
 console.log(
-  `clear space                ${CLEAR} units, ratio ${CLEAR_RATIO} — ` +
+  `reference   logo-flat.svg     ${viewBox(footSource)}  ${footPaths.length} paths, ink`
+)
+console.log(`written     src/components/Brand.tsx   descender ${descenderShare}%`)
+console.log(`written     brand/logo-full.svg        ${fullW} x ${fullH}  (OG card only)`)
+console.log(`written     brand/logo-invert.svg      ${plateW} x ${plateH}`)
+console.log(
+  `clear space ${round(nBox.height)} of ${navH} units, ratio ${clearRatio} — ` +
     `--logo-clear in SiteNav.css must match`
 )

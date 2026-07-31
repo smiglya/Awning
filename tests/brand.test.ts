@@ -3,48 +3,24 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * The artwork lives twice: as SVG files under brand/, which designers edit and
- * the image generator reads, and as inline JSX in Brand.tsx, which the site
- * renders. Both copies are justified — see the note in Brand.tsx — but two
- * copies of anything drift, and a half-updated logo is the kind of defect that
- * ships because it looks fine on whichever page you happened to open.
+ * The artwork lives twice: as SVG files under brand/, which designers edit, and
+ * as inline JSX in Brand.tsx, which the site renders. Both copies are justified
+ * — see the note in Brand.tsx — but two copies of anything drift, and a
+ * half-updated logo is the kind of defect that ships because it looks fine on
+ * whichever page you happened to open.
  *
  * So: compare them. Not pixels, just the numbers that define the shapes.
  */
 
 const read = (path: string) => readFileSync(resolve(__dirname, '..', path), 'utf8')
 
-/** §5. Seven, and the brand may not contain an eighth. */
-const PALETTE = [
-  '#0A0A0A',
-  '#FAFAF9',
-  '#E54E20',
-  '#FF3E04',
-  '#FF6131',
-  '#514C4C',
-  '#666060',
-]
-
 /**
- * The two values that live only inside the lockup's masked gradient composite:
- * the ray's hot stop, and the carrier fill under it.
- *
- * Restored exactly as supplied. Neither is a token — nothing can reference
- * them, they exist inside one drawing, and the carrier is only ever seen at ten
- * percent through a gradient laid over it. Reconciling them to --cta changed
- * how the ray reads, which is the one thing the supplied artwork settles.
+ * The four files a designer maintains by hand. Nothing generates these, and the
+ * tests below check that nothing tries to: an earlier version of the generator
+ * wrote three of them, so one run replaced a hand-drawn file with a
+ * reconstruction of it and said nothing.
  */
-const RAY_ONLY = ['#FF3B00', '#D9D9D9']
-
-const BRAND_FILES = [
-  'logo.svg',
-  'wning.svg',
-  'logotype-source.svg',
-  'logo-flat.svg',
-  'logo-full.svg',
-  'logo-invert.svg',
-  'logo-compact.svg',
-]
+const REFERENCE = ['logo.svg', 'wning.svg', 'logo-flat.svg', 'logo-compact.svg']
 
 /** Strips comments, so prose about a colour is never mistaken for the colour. */
 const body = (markup: string) => markup.replace(/<!--[\s\S]*?-->/g, '')
@@ -56,23 +32,12 @@ const body = (markup: string) => markup.replace(/<!--[\s\S]*?-->/g, '')
  * does. Sorted, because document order is not part of a flat fill.
  */
 function geometry(markup: string): string[] {
-  const shapes: string[] = []
-
-  for (const match of markup.matchAll(/<path[\s\S]*?\sd="([^"]+)"/g)) {
-    const d = match[1] ?? ''
-    shapes.push(`path ${(d.match(/-?\d*\.?\d+/g) ?? []).join(' ')}`)
-  }
-
-  return shapes.sort()
+  return [...markup.matchAll(/<path[\s\S]*?\sd="([^"]+)"/g)]
+    .map((m) => `path ${((m[1] ?? '').match(/-?\d*\.?\d+/g) ?? []).join(' ')}`)
+    .sort()
 }
 
-/**
- * The <path> elements that are direct children of <svg>.
- *
- * The same depth walk the generator does, and for the same reason: the source
- * nests a group inside a group, so a non-greedy match for a closing tag stops
- * at the wrong one and lets the gradient scaffolding through.
- */
+/** The <path> elements that are direct children of <svg>, depth-aware. */
 function topLevelPaths(markup: string): string[] {
   const out: string[] = []
   let depth = 0
@@ -97,8 +62,8 @@ function topLevelPaths(markup: string): string[] {
 /** Bounds from every coordinate in a path, control points included. */
 function coarseBounds(d: string) {
   const ys: number[] = []
-  // M L C all take coordinate pairs; H and V take a single ordinate. Splitting
-  // on the commands is what keeps the x/y alternation honest — read the numbers
+  // M L C take coordinate pairs; H and V take a single ordinate. Splitting on
+  // the commands is what keeps the x/y alternation honest — read the numbers
   // straight through and every H shifts the parity of everything after it.
   for (const match of d.matchAll(/([MLHVCZ])([^MLHVCZ]*)/g)) {
     const cmd = match[1]
@@ -107,210 +72,161 @@ function coarseBounds(d: string) {
     if (cmd === 'V') ys.push(...values)
     else values.forEach((v, i) => i % 2 === 1 && ys.push(v))
   }
-  return { height: Math.max(...ys) - Math.min(...ys) }
+  return { height: Math.max(...ys) - Math.min(...ys), bottom: Math.max(...ys) }
 }
+
+/* ------------------------------------------------------- the reference set */
+
+describe('the reference artwork', () => {
+  it('is never written by the generator', () => {
+    /**
+     * The rule this pins is the one that was actually broken: the generator
+     * used to produce logo-flat.svg and logo-compact.svg, so running it
+     * overwrote a designer's file with the script's idea of it. Reading them is
+     * fine. Writing them is the bug.
+     */
+    const script = read('scripts/make-logotype.mjs')
+    const written = [...script.matchAll(/writeFileSync\([^,]*,\s*'([^']*)'/g)].map(
+      (m) => m[1]
+    )
+    const writtenPaths = [
+      ...script.matchAll(/writeFileSync\(join\(root, '([^']*)'/g),
+    ].map((m) => m[1])
+
+    for (const file of REFERENCE) {
+      for (const target of [...written, ...writtenPaths]) {
+        expect(target, `the generator writes ${file}`).not.toContain(file)
+      }
+    }
+  })
+
+  it('draws the two lockups as one shape in two colourways', () => {
+    // logo-compact is the colour version and logo-flat the ink one. If their
+    // geometry ever parts company, one of them is a different logo wearing the
+    // same name, and the site would be setting both.
+    expect(topLevelPaths(read('brand/logo-compact.svg'))).toEqual(
+      topLevelPaths(read('brand/logo-flat.svg'))
+    )
+  })
+
+  it('keeps logo-flat.svg to ink alone', () => {
+    const fills =
+      body(read('brand/logo-flat.svg')).match(/fill="(#[0-9a-fA-F]{6})"/g) ?? []
+    expect(fills.length).toBeGreaterThan(0)
+    for (const fill of fills) {
+      expect(fill.toUpperCase(), 'logo-flat.svg is the ink colourway').toBe(
+        'FILL="#0A0A0A"'
+      )
+    }
+  })
+
+  it('spends the orange only in the mark, and only on the dissolve', () => {
+    // The three oranges belong to the pixel cells at the mark's lower right.
+    // Orange anywhere else in the drawing — a letter, the awning itself — would
+    // be the logo competing with the button for the one thing orange means.
+    for (const file of ['logo.svg', 'logo-compact.svg']) {
+      const paths = [...body(read(`brand/${file}`)).matchAll(/<path[^>]*>/g)].map(
+        (m) => m[0]
+      )
+      const orange = paths.filter((tag) => /#FF(3C00|3E04|6131)/i.test(tag))
+      expect(orange, `${file} has no orange at all`).toHaveLength(3)
+    }
+  })
+})
+
+/* ---------------------------------------------------------- the component */
 
 describe('brand artwork', () => {
   const jsx = read('src/components/Brand.tsx')
 
-  it('renders the same mark that brand/logo.svg defines', () => {
-    for (const shape of geometry(body(read('brand/logo.svg')))) {
-      expect(geometry(jsx)).toContain(shape)
+  it('renders every shape the reference defines', () => {
+    // Every shape, not a count. The dissolve alone is fifteen cells, so any
+    // expected total would have to be re-guessed on every design change, and a
+    // number nobody can derive is a number people update without checking.
+    for (const file of ['logo.svg', 'logo-compact.svg', 'logo-flat.svg']) {
+      for (const shape of geometry(body(read(`brand/${file}`)))) {
+        expect(geometry(jsx), file).toContain(shape)
+      }
     }
   })
 
-  it('renders the same lockup that the supplied source defines', () => {
-    // Every shape, not a count. The dissolve alone is fifteen cells and the ray
-    // is eight more, so any expected total would have to be re-guessed on every
-    // design change, and a number nobody can derive is a number people update
-    // without checking.
-    for (const shape of geometry(body(read('brand/logotype-source.svg')))) {
-      expect(geometry(jsx)).toContain(shape)
-    }
-  })
-
-  it('holds exactly the artwork and nothing else', () => {
+  it('holds exactly that and nothing else', () => {
     /**
-     * Set equality, which subsumes the count: a shape dropped from the component
-     * fails above, a stray one left behind after an edit fails here, and neither
-     * is visible from reading brand/ alone.
+     * Set equality, which subsumes the count: a shape dropped from the
+     * component fails above, a stray one left behind after an edit fails here,
+     * and neither is visible from reading brand/ alone.
      *
-     * Sets rather than arrays, because the mark is drawn twice — once alone and
-     * once inside the compact lockup — and counting would make that look like a
-     * duplicate rather than the reuse it is.
-     *
-     * Against the sources rather than the flat file: the component carries the
-     * whole drawing, mask shapes and ray paths included, which is exactly what
-     * logo-flat.svg exists to strip.
+     * Sets rather than arrays, because the two lockups are the same geometry in
+     * two colourways and counting would read that reuse as duplication.
      */
     const inFiles = new Set([
       ...geometry(body(read('brand/logo.svg'))),
-      ...geometry(body(read('brand/logotype-source.svg'))),
-      ...geometry(body(read('brand/wning.svg'))),
+      ...geometry(body(read('brand/logo-compact.svg'))),
+      ...geometry(body(read('brand/logo-flat.svg'))),
     ])
     expect(new Set(geometry(jsx))).toEqual(inFiles)
   })
 
-  it('gives the component the same viewBox as the file', () => {
-    // Not hardcoded here: the lockup is regenerated whenever the artwork
-    // changes, and a test that has to be edited on every regeneration is a test
-    // people start editing without reading. What must hold is that the two
-    // copies agree, and that the box starts at the origin — slack in a viewBox
-    // becomes a phantom margin wherever the artwork is aligned.
-    for (const file of ['brand/logo.svg', 'brand/logo-flat.svg']) {
-      const box = read(file).match(/viewBox="([^"]+)"/)?.[1]
+  it('takes the viewBox from the file rather than recomputing it', () => {
+    // A reference file is not corrected. Measuring the ink and tightening the
+    // box would be an improvement the designer did not ask for, and it would
+    // shift every alignment that depends on the frame.
+    for (const file of ['logo.svg', 'logo-compact.svg', 'logo-flat.svg']) {
+      const box = read(`brand/${file}`).match(/viewBox="([^"]+)"/)?.[1]
       expect(box, file).toMatch(/^0 0 /)
       expect(jsx, file).toContain(`viewBox="${box}"`)
     }
   })
 
-  it('ships the artwork in the supplied colours', () => {
-    // Against the brief, and deliberately: §6.2 keeps the mark to ink or paper
-    // and criterion 9 says the logo is never orange. Overruled — the drawing
-    // ships as drawn, orange cells and gradient ray included.
-    expect(jsx).toContain('#E54E20')
+  it('carries the artwork’s own fills, not currentColor', () => {
+    // None of the three can reverse out of a dark ground, which is what
+    // brand/logo-invert.svg is for. Saying so here stops someone "fixing" the
+    // component by swapping the fills for currentColor and flattening the
+    // colour version to one tone.
+    expect(jsx).not.toContain('fill="currentColor"')
     expect(jsx).toContain('#FF6131')
-    expect(jsx).toContain('<radialGradient')
-  })
-
-  /**
-   * The lockup renders twice on every page — the navigation and the foot — and
-   * it declares twelve ids between its two masks and ten gradients. Two inline
-   * SVGs sharing an id do not warn: one mask wins for both elements and the
-   * other drawing loses its ray, or gains one it should not have.
-   *
-   * useId rather than a counter or a random suffix, because the same markup is
-   * produced by the prerender and again during hydration, and those two have to
-   * agree character for character.
-   */
-  it('makes every id unique per instance', () => {
-    expect(jsx).toContain('useId()')
-
-    // no literal id survives — each one is an interpolated template
-    expect(jsx).not.toMatch(/\sid="[^"]+"/)
-    for (const [, ref] of jsx.matchAll(/url\(#([^)]*)\)/g)) {
-      expect(ref, `url(#${ref}) is not namespaced`).toContain('${')
-    }
-
-    // and every declared id is actually referenced, so a rename cannot leave a
-    // mask pointing at nothing and quietly blank the word
-    const declared = [...jsx.matchAll(/const (\w+) = `awning-/g)].map((m) => m[1])
-    expect(declared.length).toBeGreaterThan(0)
-    for (const name of declared) {
-      expect(jsx, `${name} is declared but never used`).toContain(`\${${name}}`)
-    }
   })
 })
 
-/* ------------------------------------------------------------ the variants */
+/* ------------------------------------------------------------ derived files */
 
-describe('logo variants', () => {
-  it('derives all three from the supplied source', () => {
-    const source = topLevelPaths(read('brand/logotype-source.svg'))
-    // 15 dissolve cells, the mark, and the six visible letters
-    expect(source).toHaveLength(22)
-
-    for (const file of ['logo-flat.svg', 'logo-full.svg', 'logo-invert.svg']) {
-      expect(() => read(`brand/${file}`), file).not.toThrow()
-    }
-    // the flat file is the source's drawn geometry and nothing else
-    expect(topLevelPaths(read('brand/logo-flat.svg'))).toEqual(source)
-  })
-
-  /**
-   * The constraint list from the brief, checked rather than trusted.
-   *
-   * Every one of these has the same failure mode: it looks right in a browser
-   * and disappears somewhere else. scripts/lib/svg-raster.mjs is ours and
-   * supports none of the heavy nodes, so a gradient or a mask in this file
-   * silently drops out of the Open Graph card; a stroke does the same; a
-   * relative command sends the path parser somewhere else entirely.
-   */
-  it('keeps logo-flat.svg to what every renderer here can draw', () => {
-    const flat = body(read('brand/logo-flat.svg'))
-
-    for (const node of [
-      '<defs',
-      '<mask',
-      '<radialGradient',
-      '<linearGradient',
-      '<filter',
-    ]) {
-      expect(flat, node).not.toContain(node)
-    }
-    expect(flat).not.toMatch(/\sstroke=/)
-    expect(flat).not.toContain('transform=')
-
-    // fill on the root and nowhere else, so `color` alone drives the drawing
-    expect(flat.match(/fill="/g) ?? []).toHaveLength(1)
-    expect(flat).toContain('fill="currentColor"')
-
-    // absolute commands only: M L H V C Z, and no lowercase twins
-    for (const d of topLevelPaths(read('brand/logo-flat.svg'))) {
-      expect(d, d.slice(0, 40)).toMatch(/^[MLHVCZ0-9.,\s-]+$/)
-    }
-
-    expect(flat).toMatch(/viewBox="0 0 /)
-  })
-
-  it('keeps the ray and the orange in logo-full.svg alone', () => {
-    const full = body(read('brand/logo-full.svg'))
-    // this is the browser-only marketing variant, so the scaffolding stays
-    expect(full).toContain('<radialGradient')
-    expect(full).toContain('#FF6131')
-
-    // and nowhere else: these are the variants the site and the rasteriser use
-    for (const file of ['logo-flat.svg', 'logo-invert.svg', 'wning.svg']) {
-      const svg = body(read(`brand/${file}`))
-      for (const orange of ['#E54E20', '#FF3E04', '#FF6131']) {
-        expect(svg, `${file} paints the logo ${orange}`).not.toContain(orange)
-      }
-    }
-  })
-
-  it('makes logo-invert.svg self-contained, in palette colours', () => {
+describe('the derived pair', () => {
+  it('reverses out of ink, in palette colours', () => {
     const invert = body(read('brand/logo-invert.svg'))
-
     expect(invert).toContain('fill="#0A0A0A"')
     expect(invert).toContain('fill="#FAFAF9"')
     expect(invert).not.toContain('currentColor')
   })
 
-  it('uses no colour outside the palette, and never the export’s stray grey', () => {
-    for (const file of BRAND_FILES) {
-      const svg = body(read(`brand/${file}`))
-      for (const hex of svg.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
-        expect([...PALETTE, ...RAY_ONLY], `${file} uses ${hex}`).toContain(
-          hex.toUpperCase()
-        )
-      }
-      expect(svg.toUpperCase(), file).not.toContain('#6C6C6C')
-    }
+  it('keeps the gradient ray to the file the card reads', () => {
+    // logo-full.svg is the Figma export, not the reference: it carries a ray
+    // the reference does not have. The comment in the file says so, and this
+    // pins the difference so nobody assumes the two agree.
+    expect(body(read('brand/logo-full.svg'))).toContain('<radialGradient')
+    expect(body(read('brand/logo-compact.svg'))).not.toContain('<radialGradient')
   })
+})
 
+/* -------------------------------------------------------------- placement */
+
+describe('placement', () => {
   /**
    * Clear space is the height of the lowercase n, and SiteNav.css states it as
    * a ratio of the set height. Two places hold that number and only one of them
-   * is derived from the drawing, so they are checked against each other — the
-   * previous artwork's 0.392 would sail through any test that only asked
-   * whether the CSS parsed.
+   * is derived from the drawing, so they are checked against each other — a
+   * ratio left pointing at a previous lockup is off by a few percent, which is
+   * invisible in review and wrong on every screen.
    *
    * The tolerance is for curve maths: these bounds come from control points,
-   * which sit a tenth of a unit outside the arch itself. A stale ratio is off
-   * by forty times that.
+   * which sit a tenth of a unit outside the arch itself.
    */
   it('sets the navigation clear space from the n', () => {
-    // Measured against the compact lockup, which is what the bar actually
-    // renders. It was the full one until the navigation swapped, and a ratio
-    // left pointing at the wrong drawing is off by four percent — invisible in
-    // review and wrong on every screen.
-    const letters = topLevelPaths(read('brand/wning.svg'))
+    const letters = topLevelPaths(read('brand/logo-compact.svg')).slice(-6)
     const nHeight = coarseBounds(letters[1] ?? '').height
 
     const lockupHeight = Number(
       read('brand/logo-compact.svg').match(/viewBox="0 0 [\d.]+ ([\d.]+)"/)?.[1]
     )
-    const fromArtwork = nHeight / lockupHeight
 
     const inCss = Number(
       read('src/components/SiteNav.css').match(
@@ -319,6 +235,27 @@ describe('logo variants', () => {
     )
 
     expect(inCss, 'SiteNav.css declares no --logo-clear ratio').toBeGreaterThan(0)
-    expect(inCss).toBeCloseTo(fromArtwork, 2)
+    expect(inCss).toBeCloseTo(nHeight / lockupHeight, 2)
+  })
+
+  it('compensates the descender when centring the lockup', () => {
+    // flex centring aligns the box, and the box is taller than the word by the
+    // whole descender — so the word sits high by half of it unless something
+    // pushes back.
+    const letters = topLevelPaths(read('brand/logo-compact.svg')).slice(-6)
+    const baseline = coarseBounds(letters[1] ?? '').bottom
+    const height = Number(
+      read('brand/logo-compact.svg').match(/viewBox="0 0 [\d.]+ ([\d.]+)"/)?.[1]
+    )
+
+    const share = ((height - baseline) / height) * 100
+    const shift = Number(
+      read('src/components/SiteNav.css').match(
+        /\.logo-type[\s\S]*?translateY\(([\d.]+)%\)/
+      )?.[1]
+    )
+
+    expect(shift, 'SiteNav.css declares no translateY on .logo-type').toBeGreaterThan(0)
+    expect(shift).toBeCloseTo(share / 2, 0)
   })
 })

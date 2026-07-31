@@ -55,22 +55,22 @@ const SOURCE_FILES = walk('src', /\.(ts|tsx|css)$/)
 /* ==================================================================== colour */
 
 describe('colour', () => {
-  it('uses no hex outside the seven tokens', () => {
+  it('uses no hex outside the eight tokens', () => {
     /**
-     * Brand.tsx is the one exception, and a narrow one.
+     * Brand.tsx is the one exception, and it is an exception because it is not
+     * interface — it is a drawing, transcribed from the reference artwork under
+     * brand/, fill for fill.
      *
-     * It holds the supplied lockup verbatim, and inside its masked gradient
-     * composite live two values that are nobody's token: the ray's hot stop and
-     * the carrier fill beneath it, the latter only ever visible at ten percent
-     * through the gradient laid over it. They were reconciled to --cta once,
-     * which changed how the ray reads, and reverted for that reason. Nothing
-     * outside that one drawing may use them.
+     * The warm grey is the designer's, in two cells of the mark's dissolve. The
+     * brief asked for it to be reconciled to --muted and it was, until the
+     * reference files arrived carrying the original. A reference file is not
+     * corrected, so the value stands and this is where that is written down.
      */
-    const RAY_ONLY = ['#FF3B00', '#D9D9D9']
+    const ARTWORK_ONLY = ['#6C6C6C']
 
     for (const file of [...SOURCE_FILES, 'index.html']) {
       const allowed =
-        file === 'src/components/Brand.tsx' ? [...PALETTE, ...RAY_ONLY] : PALETTE
+        file === 'src/components/Brand.tsx' ? [...PALETTE, ...ARTWORK_ONLY] : PALETTE
 
       for (const hex of read(file).match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) {
         expect(allowed, `${file} uses ${hex}`).toContain(hex.toUpperCase())
@@ -93,9 +93,15 @@ describe('colour', () => {
     }
   })
 
-  it('never leaves #6C6C6C behind', () => {
-    // it arrived with the supplied logo artwork and is in no palette
-    for (const file of [...SOURCE_FILES, ...walk('brand', /\.svg$/), 'index.html']) {
+  it('keeps the artwork’s stray grey out of the interface', () => {
+    /**
+     * #6C6C6C belongs to two cells of the mark's dissolve and to nothing else.
+     * The brief wanted it gone entirely; the reference artwork keeps it, and a
+     * reference file is not corrected. So the rule narrows rather than
+     * disappearing: a drawing may carry it, an interface may not — the moment
+     * it turns up in a stylesheet it is a ninth colour nobody declared.
+     */
+    for (const file of [...STYLE_FILES, 'index.html']) {
       expect(read(file).toUpperCase(), file).not.toContain('#6C6C6C')
     }
   })
