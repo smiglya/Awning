@@ -144,7 +144,7 @@ describe('colour', () => {
     }
   })
 
-  it('keeps --accent to the three places that earn it', () => {
+  it('keeps --accent to the places that earn it', () => {
     /**
      * 2.87 against paper: it fails even the 3:1 floor for interface elements,
      * so it may never be ordinary text or a border on the light ground.
@@ -153,6 +153,10 @@ describe('colour', () => {
      * cannot tell the difference between the two `color` declarations that
      * matter here — one paints a hovered character and is fine, one would paint
      * a paragraph and is not.
+     *
+     * The gradient is the third, and it is a ground rather than a mark: --accent
+     * is the light end of the sweep across the orange buttons, where it carries
+     * ink type at 6.60 rather than trying to be read itself.
      */
     const rules: string[] = []
     for (const file of STYLE_FILES) {
@@ -166,6 +170,7 @@ describe('colour', () => {
     expect(rules).toEqual([
       'src/index.css: .on-ink :focus-visible, .section-dark :focus-visible',
       'src/index.css: ::highlight(awning-grey)',
+      'src/index.css: .pill-cta, .btn-primary',
     ])
 
     // and in the drawings, only as a fill on a group of cells
@@ -232,6 +237,41 @@ describe('colour', () => {
     // paper, not accent: accent over --cta is 1.29:1 and simply is not there
     const rim = css.match(/-webkit-text-stroke:\s*([^;]+);/)?.[1]
     expect(rim).toBe('1px var(--paper)')
+  })
+
+  it('burns the flame on ink, and shimmers the buttons instead', () => {
+    /**
+     * The flame started on the conversion buttons and reads on none of them:
+     * its three oranges measure 1.09, 1.16 and 1.29 against --cta. On --ink
+     * they are 5.56, 5.60 and 6.61, which is why it moved to the dark band —
+     * the one full-width ink surface on the page, and the section that argues
+     * the price.
+     */
+    const body = read('src/components/Body.tsx')
+    expect(body).toMatch(/section-dark[\s\S]{0,400}<PixelFire \/>/)
+
+    // rendered once, and by nothing else on the site
+    expect(body.match(/<PixelFire \/>/g)).toHaveLength(1)
+    for (const file of walk('src', /\.tsx$/)) {
+      if (file === 'src/components/Body.tsx' || file.endsWith('PixelFire.tsx')) continue
+      expect(read(file), `${file} still renders a flame`).not.toContain('<PixelFire')
+    }
+
+    /**
+     * The buttons drift through the orange family instead. The stops are --cta,
+     * --cta-hover and --accent and not the flame's three: --ember and
+     * --cta-hover differ by two and four across their channels, so a gradient
+     * built from that pair is one colour with extra steps. Every stop here
+     * clears AA under ink — 5.13, 5.60, 6.60 — so the label holds at every
+     * moment of the cycle, not only at the ends.
+     */
+    const css = read('src/index.css')
+    const gradient = css.match(/\.pill-cta,\s*\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? ''
+    for (const stop of ['var(--cta)', 'var(--cta-hover)', 'var(--accent)']) {
+      expect(gradient, `the shimmer is missing ${stop}`).toContain(stop)
+    }
+    // out and back rather than a loop, which would have to jump to restart
+    expect(gradient).toContain('alternate')
   })
 
   it('splits the letter hover by how dark the type already is', () => {

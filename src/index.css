@@ -315,14 +315,55 @@ input {
 .pill-cta {
   background-color: var(--cta);
   color: var(--ink);
-  /* the flame is a child, positioned against this and clipped by the pill's
-     own radius so it burns inside the button rather than over the page */
-  position: relative;
-  overflow: hidden;
 }
 
 .pill-cta:hover {
   background-color: var(--cta-hover);
+}
+
+/**
+ * The orange fills drift through the orange family instead of sitting flat.
+ *
+ * Three stops, and they are --cta, --cta-hover and --accent rather than the
+ * three the flame burns in. --ember and --cta-hover differ by two and four
+ * across their channels: a gradient built from that pair is one colour with
+ * extra work. These three run 0.222, 0.247 and 0.300 in luminance, which is a
+ * sweep the eye can actually follow.
+ *
+ * Every stop clears AA under ink type — 5.13, 5.60 and 6.60 — so the label is
+ * legible at every moment of the cycle rather than only at the ends. That is
+ * the constraint that picked the stops; the look came second.
+ *
+ * `alternate` rather than a loop. A repeating gradient sliding one way has to
+ * return, and the return is either a jump or a rewind; running it out and back
+ * is continuous by construction and reads as a slow shimmer instead of travel.
+ */
+.pill-cta,
+.btn-primary {
+  background-image: linear-gradient(
+    110deg,
+    var(--cta) 0%,
+    var(--cta-hover) 45%,
+    var(--accent) 100%
+  );
+  background-size: 220% 100%;
+  animation: cta-shimmer 7s ease-in-out infinite alternate;
+}
+
+@keyframes cta-shimmer {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-cta,
+  .btn-primary {
+    animation: none;
+  }
 }
 
 /**

@@ -333,6 +333,9 @@
 .section-dark {
   background-color: var(--ink);
   color: var(--paper);
+  /* the flame band is a child pinned to the bottom edge */
+  position: relative;
+  overflow: hidden;
 }
 
 .cost-body {

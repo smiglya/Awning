@@ -188,9 +188,6 @@ function Pricing() {
                 onClick={openChat}
               >
                 {tier.cta}
-                {/* only the featured tier: the flame marks the conversion
-                    button, and lighting all three would mark nothing */}
-                {tier.featured && <PixelFire />}
               </button>
             </motion.article>
           ))}
@@ -273,6 +270,12 @@ function AddOns() {
 function Costs() {
   return (
     <section className="section section-dark" id="why-this-price">
+      {/* The flame lives here rather than on the buttons. Against --ink the
+          three oranges measure 5.56, 5.60 and 6.61, so the pixels actually
+          read; on --cta they measured 1.09 to 1.29 and were a texture nobody
+          could see. And this is the section that argues the price, which is
+          where a little heat is worth spending. */}
+      <PixelFire />
       <div className="container">
         <div className="grid">
           <div className="col-9">
@@ -540,7 +543,6 @@ function FinalCta() {
         <motion.div className="cta-pills" {...reveal(0.18, 16)}>
           <button className="pill pill-cta" type="button" onClick={openChat}>
             {FINAL_CTA.primary}
-            <PixelFire />
           </button>
           <Link className="pill pill-outline" to="/work-map">
             {FINAL_CTA.secondary}

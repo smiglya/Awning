@@ -52,20 +52,20 @@
   }
 }
 
-/* the flame climbs on hover — the same four frames, taller and quicker */
-.pill-cta:hover .fire,
-.btn-primary:hover .fire {
-  height: 18px;
+/**
+ * Twice the size on the dark band, which is where it now burns.
+ *
+ * The band is the full measure of the page rather than a pill a few
+ * centimetres wide, so 3px modules that read as a flame inside a button read as
+ * a fringe here. Doubling the module keeps the drawing and gives it the scale
+ * the surface asks for.
+ */
+.section-dark > .fire {
+  height: 24px;
 }
 
-.pill-cta:hover .fire-art,
-.btn-primary:hover .fire-art {
-  height: 18px;
-}
-
-.pill-cta:hover .fire-frame,
-.btn-primary:hover .fire-frame {
-  animation-duration: 0.32s;
+.section-dark > .fire .fire-art {
+  height: 24px;
 }
 
 /**
@@ -83,12 +83,5 @@
 
   .fire-frame:nth-of-type(1) {
     opacity: 1;
-  }
-
-  .pill-cta:hover .fire,
-  .btn-primary:hover .fire,
-  .pill-cta:hover .fire-art,
-  .btn-primary:hover .fire-art {
-    height: auto;
   }
 }

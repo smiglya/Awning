@@ -172,12 +172,11 @@
  * passes. The arrow beside it renders in currentColor for the same reason —
  * an orange cell on an orange fill is a hole, not a highlight.
  */
+/* the shimmer that runs across this lives with .pill-cta in index.css, so the
+   two orange fills cannot drift into different animations */
 .btn-primary {
   background-color: var(--cta);
   color: var(--ink);
-  /* the flame is a child, clipped by the button's own radius */
-  position: relative;
-  overflow: hidden;
 }
 
 .btn-primary:hover {
