@@ -18,13 +18,20 @@ import { ROUTE_META, jsonLdFor, metaFor } from '../src/seo'
 const root = resolve(__dirname, '..')
 const read = (path: string) => readFileSync(join(root, path), 'utf8')
 
-/** §5. Seven, and the site may not contain an eighth. */
+/**
+ * Eight, and the site may not contain a ninth.
+ *
+ * The brief specifies seven. --ember #FF3C00 is the eighth, added on request
+ * for the pixel flame — it was --cta itself until the conversion colour moved
+ * to #E54E20, so the fire burns in the three oranges the brand was drawn from.
+ */
 const PALETTE = [
   '#0A0A0A',
   '#FAFAF9',
   '#E54E20',
   '#FF3E04',
   '#FF6131',
+  '#FF3C00',
   '#514C4C',
   '#666060',
 ]
@@ -153,34 +160,36 @@ describe('colour', () => {
     expect(rules).toEqual([
       'src/index.css: .on-ink :focus-visible, .section-dark :focus-visible',
       'src/index.css: ::highlight(awning-grey)',
-      'src/index.css: .pill, .btn, .nav-cta, .nav-menu-cta, .menu-label,' +
-        ' .chat-launcher, .chat-submit, .chat-email-btn',
     ])
 
     // and in the drawings, only as a fill on a group of cells
     expect(read('src/components/icons.tsx')).toContain('<g fill="var(--accent)">')
   })
 
-  it('gives every button both the weight and the rim', () => {
+  it('gives every button the weight, and no button an outline', () => {
     /**
-     * The two treatments belong to the same set, and the set is spelled out in
-     * one place for that reason. A button added to the stroke rule but left at
-     * 500 — or bolded in its own sheet and never added here — is exactly the
-     * drift the single rule exists to prevent, and neither half looks wrong on
-     * its own.
+     * 600 is the third weight on a site that otherwise runs on two, and the
+     * buttons are the whole reason it is loaded — so the set is named here
+     * rather than inferred, and a button bolded in its own sheet but never
+     * added to this list is the drift worth catching.
+     *
+     * The stroke half of this check is gone with the rule it guarded: an
+     * --accent rim on the labels read as an outline around the letterforms.
      */
-    // comments stripped first: the block above the rule is part of the run
-    // between the previous brace and this one, and it would swallow .pill
+    const BUTTONS = [
+      '.pill',
+      '.btn',
+      '.nav-cta',
+      '.nav-menu-cta',
+      '.menu-label',
+      '.chat-launcher',
+      '.chat-submit',
+      '.chat-email-btn',
+    ]
+
     const css = STYLE_FILES.map((file) => read(file))
       .join('\n')
       .replace(/\/\*[\s\S]*?\*\//g, '')
-    const stroke = css.match(/([^{}]+)\{[^}]*-webkit-text-stroke[^}]*\}/)?.[1] ?? ''
-    const selectors = stroke
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.startsWith('.'))
-
-    expect(selectors.length).toBeGreaterThanOrEqual(8)
 
     // Matched on the whole selector list rather than by substring: ".pill"
     // appears inside ".boundary-page .pill", and a loose match finds that
@@ -190,7 +199,7 @@ describe('colour', () => {
       body: m[2] ?? '',
     }))
 
-    for (const selector of selectors) {
+    for (const selector of BUTTONS) {
       const own = rules.filter((rule) => rule.selectors.includes(selector))
       expect(own.length, `${selector} has no rule of its own`).toBeGreaterThan(0)
       expect(
@@ -198,6 +207,8 @@ describe('colour', () => {
         `${selector} is not bold`
       ).toBe(true)
     }
+
+    expect(css).not.toContain('-webkit-text-stroke')
   })
 
   it('splits the letter hover by how dark the type already is', () => {

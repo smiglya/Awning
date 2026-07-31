@@ -1,0 +1,94 @@
+/**
+ * The flame band, and the frame switching that animates it.
+ *
+ * Four frames at eight a second. Each is visible for a quarter of the cycle and
+ * the switch is a hard cut — steps(1) with staggered delays rather than a
+ * crossfade, because a pixel grid that dissolves into the next one is a blur,
+ * not a flicker, and the brief is explicit that this art form changes frames
+ * like a sprite.
+ */
+
+.fire {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.fire-art {
+  display: block;
+  width: 100%;
+}
+
+.fire-frame {
+  opacity: 0;
+  animation: fire-frame 0.5s steps(1) infinite;
+}
+
+.fire-frame:nth-of-type(1) {
+  animation-delay: 0s;
+}
+.fire-frame:nth-of-type(2) {
+  animation-delay: 0.125s;
+}
+.fire-frame:nth-of-type(3) {
+  animation-delay: 0.25s;
+}
+.fire-frame:nth-of-type(4) {
+  animation-delay: 0.375s;
+}
+
+@keyframes fire-frame {
+  0%,
+  24.99% {
+    opacity: 1;
+  }
+  25%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* the flame climbs on hover — the same four frames, taller and quicker */
+.pill-cta:hover .fire,
+.btn-primary:hover .fire {
+  height: 18px;
+}
+
+.pill-cta:hover .fire-art,
+.btn-primary:hover .fire-art {
+  height: 18px;
+}
+
+.pill-cta:hover .fire-frame,
+.btn-primary:hover .fire-frame {
+  animation-duration: 0.32s;
+}
+
+/**
+ * Under reduced motion the flame holds on one frame rather than disappearing.
+ *
+ * Stopping at "no animation" would leave all four frames stacked and every cell
+ * lit at once, which is a solid bar and not a flame. So the later three are
+ * hidden and the first is pinned on.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fire-frame {
+    animation: none;
+    opacity: 0;
+  }
+
+  .fire-frame:nth-of-type(1) {
+    opacity: 1;
+  }
+
+  .pill-cta:hover .fire,
+  .btn-primary:hover .fire,
+  .pill-cta:hover .fire-art,
+  .btn-primary:hover .fire-art {
+    height: auto;
+  }
+}

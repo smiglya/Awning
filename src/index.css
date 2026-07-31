@@ -1,11 +1,17 @@
 :root {
   /**
-   * Seven colours, and the site may not contain an eighth.
+   * Eight colours, and the site may not contain a ninth.
+   *
+   * The brief specifies seven. --ember is the eighth, added on request for the
+   * pixel flame: it is #FF3C00, which was --cta itself until the conversion
+   * colour moved to #E54E20, so the fire burns in the three oranges the brand
+   * was drawn from.
    *
    * Orange means one thing — "pay or leave a request here" — so it is spent in
    * exactly six places (see §5.3 in the brief, and .pill-cta below). Colour it
    * anything else and the eye stops finding the button, which is the whole job
-   * the colour was hired for.
+   * the colour was hired for. The flame is not a seventh place: it burns on the
+   * conversion button and nowhere else, which is the same place.
    *
    * Two contrast facts drive the rules that follow, measured rather than eyed:
    * white on --cta is 3.86 and fails AA, --ink on --cta is 5.13 and passes. And
@@ -15,8 +21,9 @@
   --ink: #0a0a0a; /* dark band, the mark, text on orange */
   --paper: #fafaf9; /* page ground */
   --cta: #e54e20; /* conversion fill, and the only job orange has. 5.13 on --ink */
-  --cta-hover: #ff3e04; /* hover and active of that same button, nothing else */
-  --accent: #ff6131; /* one cell of pixel art, focus ring on ink */
+  --cta-hover: #ff3e04; /* hover and active of that same button, and the flame */
+  --accent: #ff6131; /* one cell of pixel art, focus ring on ink, the flame base */
+  --ember: #ff3c00; /* the flame's tips, and nothing else on the site */
   --text: #514c4c; /* body copy on paper. 8.08 */
   --muted: #666060; /* secondary, 14px and up only. 5.90 */
 
@@ -295,38 +302,6 @@ input {
 }
 
 /**
- * Every button label carries a thin --accent rim.
- *
- * One rule for the whole button set rather than a line in each component sheet.
- * These same selectors are the ones that carry weight 600, and two treatments
- * that belong to the same set drift apart the moment they live in eight files.
- *
- * paint-order puts the stroke behind the fill, so the rim grows outward and the
- * letterform keeps its full mass. Without it -webkit-text-stroke centres on the
- * outline and eats half its width out of the glyph, which at 14px is the
- * difference between a rim and a thinner, muddier typeface. Where paint-order
- * is not honoured the stroke is 0.5px centred, which is still only a quarter of
- * a pixel taken off each edge.
- *
- * One place this is decoration rather than an outline, and it is worth writing
- * down: on .pill-cta the rim is --accent over --cta, which measures 1.29:1. It
- * cannot be seen. What it does do is lighten the edge of ink type that has
- * 5.13:1 to work with, so if the buttons ever start reading soft, this rule is
- * the first place to look.
- */
-.pill,
-.btn,
-.nav-cta,
-.nav-menu-cta,
-.menu-label,
-.chat-launcher,
-.chat-submit,
-.chat-email-btn {
-  -webkit-text-stroke: 1px var(--accent);
-  paint-order: stroke fill;
-}
-
-/**
  * The conversion button, and the only filled button the page is allowed.
  *
  * Text is --ink rather than white on purpose: white on this orange measures
@@ -340,6 +315,10 @@ input {
 .pill-cta {
   background-color: var(--cta);
   color: var(--ink);
+  /* the flame is a child, positioned against this and clipped by the pill's
+     own radius so it burns inside the button rather than over the page */
+  position: relative;
+  overflow: hidden;
 }
 
 .pill-cta:hover {

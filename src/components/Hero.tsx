@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { scrollToId } from '../router'
 import { useChat } from './ChatWidget'
+import PixelFire from './PixelFire'
 import { IconArrow } from './icons'
 import { HERO } from '../data/copy'
 import { EASE } from './motion-presets'
@@ -125,6 +126,7 @@ export default function Hero() {
             <button className="btn btn-primary" type="button" onClick={openChat}>
               {HERO.primaryCta}
               <IconArrow size={16} className="pill-icon" />
+              <PixelFire />
             </button>
             <button
               className="btn btn-secondary"

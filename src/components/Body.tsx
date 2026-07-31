@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { Link } from '../router'
 import { useChat } from './ChatWidget'
 import Marquee from './Marquee'
+import PixelFire from './PixelFire'
 import { DEMO_COMPONENTS, type DemoKey } from './MotionDemos'
 import { reveal, rise, stagger } from './motion-presets'
 import { EmptyState, ErrorState, WorkCardSkeleton } from './Skeleton'
@@ -187,6 +188,9 @@ function Pricing() {
                 onClick={openChat}
               >
                 {tier.cta}
+                {/* only the featured tier: the flame marks the conversion
+                    button, and lighting all three would mark nothing */}
+                {tier.featured && <PixelFire />}
               </button>
             </motion.article>
           ))}
@@ -536,6 +540,7 @@ function FinalCta() {
         <motion.div className="cta-pills" {...reveal(0.18, 16)}>
           <button className="pill pill-cta" type="button" onClick={openChat}>
             {FINAL_CTA.primary}
+            <PixelFire />
           </button>
           <Link className="pill pill-outline" to="/work-map">
             {FINAL_CTA.secondary}

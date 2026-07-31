@@ -3,6 +3,7 @@ import Footer from '../components/Footer'
 import ClientMap from '../components/ClientMap'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useChat } from '../components/ChatWidget'
+import PixelFire from '../components/PixelFire'
 import { Link } from '../router'
 import { MAP_PAGE } from '../data/copy'
 import './MapPage.css'
@@ -28,6 +29,7 @@ export default function MapPage() {
               onClick={openChat}
             >
               {MAP_PAGE.cta}
+              <PixelFire />
             </button>
           </div>
 

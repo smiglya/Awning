@@ -175,6 +175,9 @@
 .btn-primary {
   background-color: var(--cta);
   color: var(--ink);
+  /* the flame is a child, clipped by the button's own radius */
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-primary:hover {
