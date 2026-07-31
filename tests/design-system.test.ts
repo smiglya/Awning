@@ -49,9 +49,24 @@ const SOURCE_FILES = walk('src', /\.(ts|tsx|css)$/)
 
 describe('colour', () => {
   it('uses no hex outside the seven tokens', () => {
+    /**
+     * Brand.tsx is the one exception, and a narrow one.
+     *
+     * It holds the supplied lockup verbatim, and inside its masked gradient
+     * composite live two values that are nobody's token: the ray's hot stop and
+     * the carrier fill beneath it, the latter only ever visible at ten percent
+     * through the gradient laid over it. They were reconciled to --cta once,
+     * which changed how the ray reads, and reverted for that reason. Nothing
+     * outside that one drawing may use them.
+     */
+    const RAY_ONLY = ['#FF3B00', '#D9D9D9']
+
     for (const file of [...SOURCE_FILES, 'index.html']) {
+      const allowed =
+        file === 'src/components/Brand.tsx' ? [...PALETTE, ...RAY_ONLY] : PALETTE
+
       for (const hex of read(file).match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) {
-        expect(PALETTE, `${file} uses ${hex}`).toContain(hex.toUpperCase())
+        expect(allowed, `${file} uses ${hex}`).toContain(hex.toUpperCase())
       }
     }
   })

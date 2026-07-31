@@ -292,9 +292,15 @@ function addSpan(coverage, width, row, xStart, xEnd, weight) {
 /**
  * @returns Float32Array of coverage 0..1, one entry per pixel.
  * @param fit  {width, height} of the box the ink is fitted into, and where it sits
+ * @param frame  bounds to fit, when they are not this call's own.
+ *
+ *   Drawing one lockup in several colours means several calls, and each one
+ *   holds a few cells rather than the whole word. Left to itself every call
+ *   would fit its own handful of pixels to the full box and scatter them across
+ *   the card. Passing the whole drawing's bounds keeps every pass on one grid.
  */
-export function rasterise(shapes, canvasWidth, canvasHeight, fit) {
-  const bounds = inkBounds(shapes)
+export function rasterise(shapes, canvasWidth, canvasHeight, fit, frame = null) {
+  const bounds = frame ?? inkBounds(shapes)
   const scale = Math.min(fit.width / bounds.width, fit.height / bounds.height)
   const offsetX = fit.x + (fit.width - bounds.width * scale) / 2
   const offsetY = fit.y + (fit.height - bounds.height * scale) / 2

@@ -23,6 +23,75 @@ const PAPER = [0xfa, 0xfa, 0xf9]
 
 const artwork = (name) => parseSvg(readFileSync(join(root, 'brand', name), 'utf8')).shapes
 
+const hex = (value) => [
+  parseInt(value.slice(1, 3), 16),
+  parseInt(value.slice(3, 5), 16),
+  parseInt(value.slice(5, 7), 16),
+]
+
+/**
+ * The drawn paths of a supplied file, grouped by fill.
+ *
+ * Only the ones at the top level: the lockup keeps its letters twice over, once
+ * as a mask shape, and its gradient ray sprawls from x -2207 to x 26184. Either
+ * would wreck the fit if it reached the bounds calculation.
+ *
+ * The ray itself cannot be drawn here — this rasteriser has no gradients, which
+ * is exactly why brand/logo-flat.svg exists. What survives is the three orange
+ * cells of the dissolve, and those are what make the card read as the brand
+ * rather than as a silhouette of it.
+ */
+function colouredArtwork(name) {
+  const source = readFileSync(join(root, 'brand', name), 'utf8').replace(
+    /<!--[\s\S]*?-->/g,
+    ''
+  )
+
+  const groups = new Map()
+  let depth = 0
+
+  for (const [tag] of source.matchAll(/<\/?(?:defs|mask|g|path)\b[^>]*>/g)) {
+    const isClose = tag.startsWith('</')
+    const name = tag.replace(/^<\/?/, '').match(/^[a-z]+/)[0]
+
+    if (name === 'path') {
+      const d = tag.match(/\sd="([^"]+)"/)?.[1]
+      const fill = tag.match(/\sfill="(#[0-9A-Fa-f]{6})"/)?.[1]
+      if (depth === 0 && !isClose && d && fill) {
+        const key = fill.toUpperCase()
+        groups.set(key, [...(groups.get(key) ?? []), d])
+      }
+      continue
+    }
+    depth += isClose ? -1 : tag.endsWith('/>') ? 0 : 1
+  }
+
+  const byColour = [...groups].map(([fill, paths]) => ({
+    colour: hex(fill),
+    shapes: shapesOf(paths),
+  }))
+
+  return { byColour, frame: inkBounds(byColour.flatMap((g) => g.shapes)) }
+}
+
+const shapesOf = (paths) =>
+  parseSvg(`<svg>${paths.map((d) => `<path d="${d}"/>`).join('')}</svg>`).shapes
+
+/**
+ * The paths inside the nth <mask> of a file.
+ *
+ * Two of them here, in document order: the letters, then the band of diagonal
+ * stripes the ray is cut from. Neither nests another mask, so a non-greedy
+ * match to the first closing tag is the right block both times.
+ */
+function maskPaths(source, index) {
+  const blocks = [...source.matchAll(/<mask\b[^>]*>([\s\S]*?)<\/mask>/g)]
+  const inner = blocks[index]?.[1] ?? ''
+  const paths = [...inner.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1])
+  if (paths.length === 0) throw new Error(`mask ${index} holds no paths`)
+  return paths
+}
+
 /* ------------------------------------------------------------ PNG encoding */
 
 const CRC_TABLE = (() => {
@@ -124,9 +193,44 @@ class Canvas {
     return [this.pixels[offset], this.pixels[offset + 1], this.pixels[offset + 2]]
   }
 
-  /** Composites artwork in one flat colour, respecting the antialiased edge. */
-  draw(shapes, box, colour) {
-    const coverage = rasterise(shapes, this.width, this.height, box)
+  /**
+   * Composites the overlap of two drawings, which is what a mask is.
+   *
+   * The lockup sweeps a gradient ray across the word by masking a band of
+   * diagonal stripes with the letters themselves. There are no gradients here
+   * and there is no mask element either, but coverage buffers multiply, and
+   * that is the same operation: a pixel is lit only where both drawings cover
+   * it. The colour is the ray's gradient averaged to one value, which at this
+   * size is a distinction nobody can see.
+   *
+   * @param opacity  the stripes carry fill-opacity in the source, and since
+   *   they are a mask that is transparency of the ray rather than of a fill.
+   */
+  drawMasked(shapes, through, box, colour, frame, opacity = 1) {
+    const a = rasterise(shapes, this.width, this.height, box, frame)
+    const b = rasterise(through, this.width, this.height, box, frame)
+
+    for (let i = 0; i < a.length; i += 1) {
+      const alpha = Math.min(a[i], 1) * Math.min(b[i], 1) * opacity
+      if (alpha <= 0) continue
+      const x = i % this.width
+      const y = (i - x) / this.width
+      const blended = mix(this.get(x, y), colour, alpha)
+      const offset = i * 3
+      this.pixels[offset] = blended[0]
+      this.pixels[offset + 1] = blended[1]
+      this.pixels[offset + 2] = blended[2]
+    }
+  }
+
+  /**
+   * Composites artwork in one flat colour, respecting the antialiased edge.
+   *
+   * @param frame  the whole drawing's bounds, when this call holds only part of
+   *   it. See the note on rasterise.
+   */
+  draw(shapes, box, colour, frame = null) {
+    const coverage = rasterise(shapes, this.width, this.height, box, frame)
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
         const alpha = coverage[y * this.width + x]
@@ -169,21 +273,40 @@ function drawOgImage() {
   // lockup — which quietly moves it off that shared left edge.
   const margin = 160
   const measure = 1200 - margin * 2
-  const lockup = artwork('logo-flat.svg')
-  const bounds = inkBounds(lockup)
+  const { byColour, frame } = colouredArtwork('logo-full.svg')
+  const box = {
+    x: margin,
+    y: 110,
+    width: measure,
+    height: measure / (frame.width / frame.height),
+  }
 
-  canvas.draw(
-    lockup,
-    {
-      x: margin,
-      y: 110,
-      width: measure,
-      height: measure / (bounds.width / bounds.height),
-    },
-    INK
+  // One pass per fill, all of them sharing the lockup's bounds so the dissolve
+  // cells land where the drawing puts them rather than each being fitted alone.
+  for (const { colour, shapes } of byColour) canvas.draw(shapes, box, colour, frame)
+
+  // Then the ray, over the letters it is cut from. The source builds it out of
+  // a carrier fill under a gradient at 0.9, so the flat stand-in is that
+  // composite worked out once: nine parts of the gradient's middle stop to one
+  // of the grey beneath it.
+  const source = readFileSync(join(root, 'brand/logo-full.svg'), 'utf8')
+  canvas.drawMasked(
+    shapesOf(maskPaths(source, 0)),
+    shapesOf(maskPaths(source, 1)),
+    box,
+    mix(hex('#D9D9D9'), hex('#FF3E04'), 0.9),
+    frame,
+    0.7
   )
-  // the mark alone, reversed out of the band
-  canvas.draw(artwork('logo.svg'), { x: margin, y: bandTop + 26, width: 44, height: 44 }, PAPER)
+
+  // The mark alone, reversed out of the band, and flat there: three orange
+  // cells at 44px are three specks, and the band is the one strip of this card
+  // that is asking to be read rather than looked at.
+  canvas.draw(
+    artwork('logo.svg'),
+    { x: margin, y: bandTop + 26, width: 44, height: 44 },
+    PAPER
+  )
 
   return canvas.toPng()
 }
@@ -197,7 +320,11 @@ function drawPoster() {
   const canvas = new Canvas(1280, 720)
 
   canvas.each((x, y) => (x % 80 === 0 || y % 80 === 0 ? rule(0.06) : PAPER))
-  canvas.draw(artwork('logo.svg'), { x: 490, y: 210, width: 300, height: 300 }, rule(0.16))
+  canvas.draw(
+    artwork('logo.svg'),
+    { x: 490, y: 210, width: 300, height: 300 },
+    rule(0.16)
+  )
 
   return canvas.toPng()
 }

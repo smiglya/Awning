@@ -57,10 +57,7 @@ async function main() {
     page = page.replace(/<title>[\s\S]*?<\/title>\s*/, '')
     page = page.replace(/<meta\s+name="description"[^>]*>\s*/, '')
     page = page.replace('</head>', `  ${head}\n  </head>`)
-    page = page.replace(
-      '<div id="root"></div>',
-      `<div id="root">${html}</div>`
-    )
+    page = page.replace('<div id="root"></div>', `<div id="root">${html}</div>`)
 
     const target =
       path === '/'

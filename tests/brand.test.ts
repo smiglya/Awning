@@ -25,6 +25,17 @@ const PALETTE = [
   '#666060',
 ]
 
+/**
+ * The two values that live only inside the lockup's masked gradient composite:
+ * the ray's hot stop, and the carrier fill under it.
+ *
+ * Restored exactly as supplied. Neither is a token — nothing can reference
+ * them, they exist inside one drawing, and the carrier is only ever seen at ten
+ * percent through a gradient laid over it. Reconciling them to --cta changed
+ * how the ray reads, which is the one thing the supplied artwork settles.
+ */
+const RAY_ONLY = ['#FF3B00', '#D9D9D9']
+
 const BRAND_FILES = [
   'logo.svg',
   'logotype-source.svg',
@@ -106,11 +117,12 @@ describe('brand artwork', () => {
     }
   })
 
-  it('renders the same lockup that brand/logo-flat.svg defines', () => {
-    // Every shape, not a count. The dissolve alone is fifteen cells, so any
-    // expected total would have to be re-guessed on every design change, and a
-    // number nobody can derive is a number people update without checking.
-    for (const shape of geometry(body(read('brand/logo-flat.svg')))) {
+  it('renders the same lockup that the supplied source defines', () => {
+    // Every shape, not a count. The dissolve alone is fifteen cells and the ray
+    // is eight more, so any expected total would have to be re-guessed on every
+    // design change, and a number nobody can derive is a number people update
+    // without checking.
+    for (const shape of geometry(body(read('brand/logotype-source.svg')))) {
       expect(geometry(jsx)).toContain(shape)
     }
   })
@@ -119,9 +131,13 @@ describe('brand artwork', () => {
     // Set equality, which subsumes the count: a shape dropped from the component
     // fails above, a stray one left behind after an edit fails here, and neither
     // is visible from reading brand/ alone.
+    //
+    // Against the source rather than logo-flat.svg, because the component now
+    // carries the whole drawing — the mask shapes and the ray paths included,
+    // which the flat file exists precisely to strip.
     const inFiles = [
       ...geometry(body(read('brand/logo.svg'))),
-      ...geometry(body(read('brand/logo-flat.svg'))),
+      ...geometry(body(read('brand/logotype-source.svg'))),
     ].sort()
     expect(geometry(jsx)).toEqual(inFiles)
   })
@@ -139,12 +155,41 @@ describe('brand artwork', () => {
     }
   })
 
-  it('draws the component in one colour', () => {
-    // The artwork carries three orange cells. They belong to logo-full.svg and
-    // the Open Graph card; on the site the logo inherits `color` and nothing
-    // else, because orange there means "press this".
-    expect(jsx).toContain('fill="currentColor"')
-    expect(jsx.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([])
+  it('ships the artwork in the supplied colours', () => {
+    // Against the brief, and deliberately: §6.2 keeps the mark to ink or paper
+    // and criterion 9 says the logo is never orange. Overruled — the drawing
+    // ships as drawn, orange cells and gradient ray included.
+    expect(jsx).toContain('#E54E20')
+    expect(jsx).toContain('#FF6131')
+    expect(jsx).toContain('<radialGradient')
+  })
+
+  /**
+   * The lockup renders twice on every page — the navigation and the foot — and
+   * it declares twelve ids between its two masks and ten gradients. Two inline
+   * SVGs sharing an id do not warn: one mask wins for both elements and the
+   * other drawing loses its ray, or gains one it should not have.
+   *
+   * useId rather than a counter or a random suffix, because the same markup is
+   * produced by the prerender and again during hydration, and those two have to
+   * agree character for character.
+   */
+  it('makes every id unique per instance', () => {
+    expect(jsx).toContain('useId()')
+
+    // no literal id survives — each one is an interpolated template
+    expect(jsx).not.toMatch(/\sid="[^"]+"/)
+    for (const [, ref] of jsx.matchAll(/url\(#([^)]*)\)/g)) {
+      expect(ref, `url(#${ref}) is not namespaced`).toContain('${')
+    }
+
+    // and every declared id is actually referenced, so a rename cannot leave a
+    // mask pointing at nothing and quietly blank the word
+    const declared = [...jsx.matchAll(/const (\w+) = `awning-/g)].map((m) => m[1])
+    expect(declared.length).toBeGreaterThan(0)
+    for (const name of declared) {
+      expect(jsx, `${name} is declared but never used`).toContain(`\${${name}}`)
+    }
   })
 })
 
@@ -226,7 +271,9 @@ describe('logo variants', () => {
     for (const file of BRAND_FILES) {
       const svg = body(read(`brand/${file}`))
       for (const hex of svg.match(/#[0-9a-fA-F]{6}\b/g) ?? []) {
-        expect(PALETTE, `${file} uses ${hex}`).toContain(hex.toUpperCase())
+        expect([...PALETTE, ...RAY_ONLY], `${file} uses ${hex}`).toContain(
+          hex.toUpperCase()
+        )
       }
       expect(svg.toUpperCase(), file).not.toContain('#6C6C6C')
     }
