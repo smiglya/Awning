@@ -31,7 +31,7 @@ export interface RenderResult {
   meta: RouteMeta
 }
 
-export function render(path: string, hasOgImage = false): RenderResult {
+export function render(path: string, ogImageVersion: string | null = null): RenderResult {
   // real cards in the prerendered HTML rather than skeletons
   seedProjectsCache(CLIENTS)
 
@@ -47,7 +47,7 @@ export function render(path: string, hasOgImage = false): RenderResult {
     </MotionConfig>
   )
 
-  return { html, head: headFor(path, hasOgImage), meta: metaFor(path) }
+  return { html, head: headFor(path, ogImageVersion), meta: metaFor(path) }
 }
 
 function escapeAttr(value: string): string {
@@ -60,14 +60,24 @@ function escapeJsonLd(value: object): string {
 }
 
 /**
- * @param hasOgImage whether public/og-image.png actually exists. A social tag
- *   pointing at a 404 is worse than no tag: scrapers cache the failure, and
- *   some show a broken-image frame rather than falling back to text.
+ * @param ogImageVersion a short digest of public/og-image.png, or null when the
+ *   file is not there.
+ *
+ *   Null means the social tags are omitted entirely. A tag pointing at a 404 is
+ *   worse than no tag: scrapers cache the failure, and some show a broken-image
+ *   frame rather than falling back to text.
+ *
+ *   The digest goes on the URL as a query, so redrawing the card changes where
+ *   it lives. Without that the filename is constant for the life of the site
+ *   and every cache between here and a reader is entitled to keep serving the
+ *   first version it ever fetched — which is how a card goes on advertising a
+ *   price that was retired three commits ago.
  */
-export function headFor(path: string, hasOgImage = false): string {
+export function headFor(path: string, ogImageVersion: string | null = null): string {
   const meta = metaFor(path)
   const url = `${SITE_URL}${meta.canonical}`
-  const image = `${SITE_URL}/og-image.png`
+  const hasOgImage = ogImageVersion !== null
+  const image = `${SITE_URL}/og-image.png?v=${ogImageVersion ?? ''}`
 
   const tags = [
     `<title>${escapeAttr(meta.title)}</title>`,
@@ -97,7 +107,7 @@ export function headFor(path: string, hasOgImage = false): string {
       // describes what the card actually shows; the price is in the description,
       // not drawn on the image, and alt text that promises text nobody can find
       // is worse than none
-      `<meta property="og:image:alt" content="The Awning logotype, black on off-white" />`,
+      `<meta property="og:image:alt" content="The Awning logotype: the mark and the word, with an orange ray across the letters" />`,
       `<meta name="twitter:image" content="${escapeAttr(image)}" />`
     )
   }

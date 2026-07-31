@@ -1,6 +1,7 @@
 import { build } from 'vite'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -38,18 +39,35 @@ async function main() {
 
   const template = await readFile(join(dist, 'index.html'), 'utf8')
 
-  // Social image tags are emitted only if the asset is really there. Run
-  // `npm run images` to generate it; a tag pointing at a 404 gets cached as a
-  // failure by the scrapers that matter.
-  const hasOgImage = existsSync(join(dist, 'og-image.png'))
-  if (!hasOgImage) {
+  /**
+   * Social image tags are emitted only if the asset is really there, and the
+   * URL carries a digest of its contents.
+   *
+   * Run `npm run images` to generate it; a tag pointing at a 404 gets cached as
+   * a failure by the scrapers that matter.
+   *
+   * The digest is the fix for the other half of that problem. og-image.png is a
+   * fixed filename, so redrawing it changes no URL, and every cache between
+   * here and a reader keeps serving whichever version it fetched first. This is
+   * not hypothetical — the card went on showing a retired price for three
+   * commits. Eight hex characters is plenty: this is cache-busting, not
+   * integrity.
+   */
+  const ogImagePath = join(dist, 'og-image.png')
+  let ogImageVersion = null
+
+  if (existsSync(ogImagePath)) {
+    const bytes = await readFile(ogImagePath)
+    ogImageVersion = createHash('sha256').update(bytes).digest('hex').slice(0, 8)
+    console.log(`[prerender] og-image.png v${ogImageVersion}`)
+  } else {
     console.warn(
       '[prerender] og-image.png missing — social image tags omitted. Run: npm run images'
     )
   }
 
   for (const path of PRERENDER_PATHS) {
-    const { html, head } = render(path, hasOgImage)
+    const { html, head } = render(path, ogImageVersion)
 
     let page = template
     // the built template carries the base <title> and description; the

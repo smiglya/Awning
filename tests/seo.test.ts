@@ -8,6 +8,7 @@ import {
   SITE_URL,
 } from '../src/seo'
 import { toAppPath, toHref } from '../src/router'
+import { headFor } from '../src/entry-server'
 import { PRICING } from '../src/data/copy'
 
 /**
@@ -118,5 +119,37 @@ describe('base-aware paths', () => {
   it('tolerates the trailing slash GitHub Pages adds to directory indexes', () => {
     expect(toAppPath('/work-map/')).toBe('/work-map')
     expect(toAppPath('/')).toBe('/')
+  })
+})
+
+/* ------------------------------------------------------------ social card */
+
+describe('the social card', () => {
+  /**
+   * og-image.png is a fixed filename, so redrawing it changes no URL and every
+   * cache between the build and a reader is entitled to keep serving whichever
+   * version it fetched first. That is not hypothetical: the card went on
+   * advertising a retired price for three commits while the file on disk was
+   * already correct. The digest in the query is what makes a redraw visible.
+   */
+  it('versions the image URL by its contents', () => {
+    const head = headFor('/', 'deadbeef')
+    expect(head).toContain('og-image.png?v=deadbeef')
+    expect(head).toContain('name="twitter:image" content="')
+    expect(head).toContain('summary_large_image')
+  })
+
+  it('omits the image tags entirely when there is no card', () => {
+    // a tag pointing at a 404 is worse than no tag — scrapers cache the failure
+    const head = headFor('/', null)
+    expect(head).not.toContain('og:image')
+    expect(head).not.toContain('twitter:image')
+    expect(head).toContain('name="twitter:card" content="summary"')
+  })
+
+  it('describes what the card actually shows', () => {
+    // the alt text promised black-on-off-white long after the ray went in
+    const alt = headFor('/', 'deadbeef').match(/og:image:alt" content="([^"]+)"/)?.[1]
+    expect(alt).toMatch(/orange ray/)
   })
 })
