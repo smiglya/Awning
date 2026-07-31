@@ -1,7 +1,10 @@
 import SiteNav from '../components/SiteNav'
 import Footer from '../components/Footer'
+import Letters from '../components/Letters'
 import { Link } from '../router'
 import './NotFound.css'
+
+const TITLE = 'That page is not here.'
 
 /**
  * A real 404 rather than the landing page.
@@ -17,13 +20,17 @@ export default function NotFound() {
       <main className="notfound">
         <div className="container notfound-inner">
           <p className="notfound-code">404</p>
-          <h1 className="notfound-title">That page is not here.</h1>
+          <h1 className="notfound-title" aria-label={TITLE}>
+            <Letters text={TITLE} />
+          </h1>
           <p className="notfound-text">
             The link may be old, or the address may have a typo in it. Both routes below
             definitely work.
           </p>
           <div className="notfound-links">
-            <Link className="pill pill-fill" to="/">
+            {/* outline, not the conversion fill: getting out of a dead end is
+                recovery, and orange on this site means "pay or ask for a price" */}
+            <Link className="pill pill-outline" to="/">
               Back to home
             </Link>
             <Link className="pill pill-outline" to="/work-map">

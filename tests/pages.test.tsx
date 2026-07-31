@@ -27,11 +27,31 @@ describe('landing page', () => {
 
   it('shows the price floor in the hero', () => {
     renderAt('/')
-    // the headline names the number rather than promising a conversation about
-    // it, which is the whole positioning — so it is worth a test of its own
+    // The headline names the number rather than promising a conversation about
+    // it, which is the whole positioning — so it is worth a test of its own.
+    //
+    // Queried by accessible name, not by text. Headings are split into one
+    // element per letter for the hover, which leaves no single node holding the
+    // sentence; the name is what a screen reader and a search engine both get,
+    // and it is the thing the split could actually break.
+    const price = PRICING.tiers[0]?.price ?? ''
     expect(
-      screen.getByText(new RegExp(`it starts at \\${PRICING.tiers[0]?.price}`, 'i'))
+      screen.getByRole('heading', {
+        level: 1,
+        name: new RegExp(`it starts at \\${price}`, 'i'),
+      })
     ).toBeInTheDocument()
+  })
+
+  it('keeps a heading readable after splitting it into letters', () => {
+    renderAt('/')
+    const heading = screen.getByRole('heading', { level: 2, name: PRICING.h2 })
+    // every character still present, in order, for anything reading text
+    expect(heading.textContent).toBe(PRICING.h2)
+    // and each letter is its own hover target
+    expect(heading.querySelectorAll('.hl-letter').length).toBe(
+      PRICING.h2.replace(/\s/g, '').length
+    )
   })
 
   it('renders every pricing tier', () => {

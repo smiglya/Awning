@@ -1,11 +1,38 @@
-<!-- Awning mark. Source of truth: mirrored as JSX in src/components/Brand.tsx
-     and rasterised into the Open Graph card by scripts/make-images.mjs. -->
+<!-- Awning mark. SUPPLIED ARTWORK — edit this file to change the mark.
+
+     The awning, read as a tent, dissolving at the lower right into pixels on a
+     17 x 16 module. Three of those cells carry the orange, and they are the
+     only orange in the brand: #E54E20, #FF3E04 and #FF6131, the same three the
+     palette spends on conversion. The warm grey the export arrived with sat in
+     no palette here and is now --muted; two dissolve cells carry it.
+
+     scripts/make-logotype.mjs reads this, flattens it to currentColor for
+     logo-flat.svg and src/components/Brand.tsx, and keeps the colour for
+     logo-full.svg. On the site the mark is only ever flat — ink or paper —
+     because orange there means "press this" and a logo is not a button.
+
+     viewBox is already tight to the ink: the triangle spans the whole box. -->
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 12 13"
-  width="12"
-  height="13"
-  fill="currentColor"
+  viewBox="0 0 270 292"
+  width="270"
+  height="292"
+  fill="none"
 >
-  <path d="M6 0L12 13H10.3301L6.86603 7.13726L3.40193 13H0L6 0Z" />
+  <path d="M197.334 276.038H214.323V292H197.334V276.038Z" fill="#666060" />
+  <path d="M163.355 276.038H180.344V292H163.355V276.038Z" fill="#0A0A0A" />
+  <path d="M146.367 276.038H163.356V292H146.367V276.038Z" fill="#666060" />
+  <path d="M95.4004 276.038H112.389V292H95.4004V276.038Z" fill="#0A0A0A" />
+  <path d="M112.391 276.038H129.379V292H112.391V276.038Z" fill="#0A0A0A" />
+  <path d="M129.379 276.038H146.368V292H129.379V276.038Z" fill="#0A0A0A" />
+  <path d="M163.355 260.075H180.344V276.037H163.355V260.075Z" fill="#666060" />
+  <path d="M129.379 260.075H146.368V276.037H129.379V260.075Z" fill="#0A0A0A" />
+  <path d="M146.367 260.075H163.356V276.037H146.367V260.075Z" fill="#0A0A0A" />
+  <path d="M180.344 260.075H197.332V276.037H180.344V260.075Z" fill="#0A0A0A" />
+  <path d="M163.355 244.113H180.344V260.076H163.355V244.113Z" fill="#0A0A0A" />
+  <path d="M180.344 244.113H197.332V260.076H180.344V244.113Z" fill="#0A0A0A" />
+  <path d="M112.391 244.124H129.379V260.086H112.391V244.124Z" fill="#FF6131" />
+  <path d="M129.379 228.161H146.368V244.123H129.379V228.161Z" fill="#FF3E04" />
+  <path d="M163.346 212.199H180.334V228.161H163.346V212.199Z" fill="#E54E20" />
+  <path d="M0 292L135 0L270 292H232.578L154.261 156.58L75.9444 292H0Z" fill="#0A0A0A" />
 </svg>

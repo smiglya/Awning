@@ -22,7 +22,7 @@ const read = (path: string) => readFileSync(join(root, path), 'utf8')
 const PALETTE = [
   '#0A0A0A',
   '#FAFAF9',
-  '#FF3C00',
+  '#E54E20',
   '#FF3E04',
   '#FF6131',
   '#514C4C',

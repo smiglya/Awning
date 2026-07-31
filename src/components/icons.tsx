@@ -1,11 +1,15 @@
 /**
  * House icon set. Pixel art on a 16x16 module grid, and nothing else.
  *
- * The key in the logotype is set from rectangular modules, so the icons are set
- * the same way — that is the whole reason this is pixel art rather than a
- * fashion. Mixing these with line icons on one screen breaks the join, so there
- * are no line icons left anywhere on the site: either everything is pixel or
- * nothing is.
+ * The mark dissolves into rectangular modules at its lower right — a 17 x 16
+ * cell, fifteen of them, three carrying the orange. The icons are built the
+ * same way, which is the whole reason this is pixel art rather than a fashion,
+ * and it is where the one-accent-cell rule below comes from: the logo spends
+ * its colour on a few cells of a grid, so the icons do too.
+ *
+ * Mixing these with line icons on one screen breaks the join, so there are no
+ * line icons left anywhere on the site: either everything is pixel or nothing
+ * is.
  *
  * Rules the drawings keep, all of them checkable and checked in
  * tests/design-system.test.ts:
@@ -193,14 +197,15 @@ export const IconTwoTongues = pixels([
 /* ------------------------------------------------------------------- the key */
 
 /**
- * You get the keys. The bit is the logotype's, module for module.
+ * You get the keys — the last step, and the one the whole offer turns on.
  *
- * brand/letter-i-key.svg sets its teeth by insetting the left edge 0, 1, 2 then
- * 1 modules from the shaft, each tooth two module-rows deep, with the right
- * edge running straight down as the stem. That is the pattern below, and it is
- * the reason this glyph is not free-drawn: the logo already carries the
- * turnkey idea, the copy already says keys, and an icon that invented its own
- * teeth would quietly break the rhyme the section is built on.
+ * The teeth inset 0, 1, 2 then 1 modules from the stem, two module-rows each.
+ * That pattern came from an earlier logotype which drew the lowercase i as a
+ * key, and it no longer matches anything in the mark: the supplied artwork
+ * dissolves into a scatter of cells instead, and its i is a plain dotted i.
+ * The teeth are kept because they read as a key at 24px, not because they
+ * quote the logo — and this note exists so nobody re-derives a rhyme that is
+ * not there.
  *
  * The accent is one connected group at the deepest tooth, on the silhouette
  * edge where it actually reads rather than buried inside the ink.

@@ -8,13 +8,13 @@
    * the colour was hired for.
    *
    * Two contrast facts drive the rules that follow, measured rather than eyed:
-   * white on --cta is 3.56 and fails AA, --ink on --cta is 5.56 and passes. And
-   * --cta on --text is 2.37, so the dark band has to be --ink, not the warm
+   * white on --cta is 3.86 and fails AA, --ink on --cta is 5.13 and passes. And
+   * --cta on --text is 2.19, so the dark band has to be --ink, not the warm
    * grey. #514C4C is a text colour; it is never a full-bleed ground.
    */
   --ink: #0a0a0a; /* dark band, the mark, text on orange */
   --paper: #fafaf9; /* page ground */
-  --cta: #ff3c00; /* conversion button fill. 5.56 against --ink */
+  --cta: #e54e20; /* conversion fill, and the only job orange has. 5.13 on --ink */
   --cta-hover: #ff3e04; /* hover and active of that same button, nothing else */
   --accent: #ff6131; /* one cell of pixel art, focus ring on ink */
   --text: #514c4c; /* body copy on paper. 8.08 */
@@ -192,6 +192,42 @@ input {
 
 .h2-dark {
   color: var(--paper);
+}
+
+/* --------------------------------------------------- headings, letter by letter */
+
+/**
+ * Each letter of a heading answers the cursor on its own.
+ *
+ * This is the one orange that is not a conversion mark, and it earns the
+ * exception the same way the focus ring does: it tracks the pointer. Exactly
+ * one letter is lit at a time — the one physically under the cursor — so a
+ * screen never gains a second orange spot competing for attention from across
+ * the page, which is the thing §5.3 is actually protecting.
+ *
+ * hover: hover keeps it off touch screens, where a tap would otherwise leave a
+ * letter stuck orange until something else was pressed.
+ */
+.hl-word {
+  /* an inline boundary is not a wrap opportunity, but say so anyway: a future
+     overflow-wrap on a heading would otherwise break words between letters */
+  white-space: nowrap;
+}
+
+.hl-letter {
+  transition: color 0.12s ease;
+}
+
+@media (hover: hover) {
+  .hl-letter:hover {
+    color: var(--cta);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-letter {
+    transition: none;
+  }
 }
 
 /* ------------------------------------------------------- screen-reader only */

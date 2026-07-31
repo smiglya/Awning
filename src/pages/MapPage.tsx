@@ -3,6 +3,7 @@ import Footer from '../components/Footer'
 import ClientMap from '../components/ClientMap'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useChat } from '../components/ChatWidget'
+import Letters from '../components/Letters'
 import { Link } from '../router'
 import { MAP_PAGE } from '../data/copy'
 import './MapPage.css'
@@ -20,10 +21,12 @@ export default function MapPage() {
             <Link className="map-back" to="/">
               ← {MAP_PAGE.backLabel}
             </Link>
-            <h1 className="map-h1">{MAP_PAGE.h1}</h1>
+            <h1 className="map-h1" aria-label={MAP_PAGE.h1}>
+              <Letters text={MAP_PAGE.h1} />
+            </h1>
             <p className="map-sub">{MAP_PAGE.sub}</p>
             <button
-              className="pill pill-fill map-head-cta"
+              className="pill pill-cta map-head-cta"
               type="button"
               onClick={openChat}
             >

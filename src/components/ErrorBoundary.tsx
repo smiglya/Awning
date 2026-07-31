@@ -88,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Nothing you did caused it. Reload, and if it happens again, write to us and we
             will look at it.
           </p>
-          <button className="pill pill-fill" type="button" onClick={this.reload}>
+          <button className="pill pill-outline" type="button" onClick={this.reload}>
             Reload the page
           </button>
         </div>
