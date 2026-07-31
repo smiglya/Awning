@@ -6,7 +6,7 @@
 /* ========================================================= 1. stat strip */
 
 .stat-strip {
-  border-bottom: 0.5px solid var(--grey-3);
+  border-bottom: 0.5px solid var(--rule);
   padding: 40px 0;
 }
 
@@ -32,7 +32,58 @@
   margin-top: 6px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
+}
+
+/* ======================================================= 2. why us cards */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gutter);
+}
+
+.card {
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
+  border-radius: 16px;
+  padding: 32px;
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.card:hover {
+  border-color: var(--rule-strong);
+  transform: translateY(-2px);
+}
+
+/* the pixel glyph sits in a pill — the one rounded form the system allows */
+.card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 0.5px solid var(--rule);
+  color: var(--ink);
+}
+
+.card-title {
+  margin: 26px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.card-body {
+  margin: 12px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text);
+  max-width: 38ch;
 }
 
 /* =================================================== 3. motion showcase */
@@ -43,8 +94,8 @@
     linear-gradient(to right, rgba(10, 10, 10, 0.032) 0.5px, transparent 0.5px),
     linear-gradient(to bottom, rgba(10, 10, 10, 0.032) 0.5px, transparent 0.5px);
   background-size: 64px 64px;
-  border-top: 0.5px solid var(--grey-3);
-  border-bottom: 0.5px solid var(--grey-3);
+  border-top: 0.5px solid var(--rule);
+  border-bottom: 0.5px solid var(--rule);
 }
 
 .demo-grid {
@@ -55,8 +106,8 @@
 }
 
 .demo-card {
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
   border-radius: 16px;
   padding: 16px 16px 22px;
 }
@@ -75,92 +126,279 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 1.5;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
-/* ======================================================= 4. why us cards */
+/* ============================================================ 4. pricing */
 
-.card-grid {
+.tier-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--gutter);
+  margin-top: 56px;
 }
 
-.card {
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
+.tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
   border-radius: 16px;
   padding: 32px;
-  transition:
-    border-color 0.25s ease,
-    transform 0.25s ease;
+  transition: border-color 0.25s ease;
 }
 
-.card:hover {
-  border-color: rgba(10, 10, 10, 0.3);
-  transform: translateY(-2px);
+.tier:hover {
+  border-color: var(--rule-strong);
 }
 
-.card-icon {
+.tier-featured {
+  border-color: var(--ink);
+}
+
+.tier-flag {
+  position: absolute;
+  top: -12px;
+  left: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background-color: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/**
+ * The hovered tier's price turns orange — one of the six places the colour is
+ * allowed, and the only one that is not a button. It reads as "this is the
+ * number you would be paying", which is what the hover is asking.
+ */
+.tier-price {
+  margin-top: 14px;
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+.tier:hover .tier-price,
+.tier:focus-within .tier-price {
+  color: var(--cta);
+}
+
+.tier-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.tier-for {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tier-list {
+  list-style: none;
+  margin: 28px 0 auto;
+  padding: 0;
+}
+
+.tier-item {
+  padding: 12px 0;
+  border-top: 0.5px solid var(--rule);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.tier-add {
+  margin: 24px 0 0;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--rule);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tier-cta {
+  margin-top: 24px;
+  width: 100%;
+}
+
+/* ============================================================ 5. add-ons */
+
+.addon-groups {
+  margin-top: 64px;
+}
+
+.addon-group + .addon-group {
+  margin-top: 64px;
+}
+
+.addon-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.addon-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 0.5px solid var(--grey-3);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 0.5px solid var(--rule);
   color: var(--ink);
-  background-color: var(--paper);
+  flex-shrink: 0;
 }
 
-.card-title {
-  margin: 26px 0 0;
-  font-size: 20px;
+.addon-title {
+  margin: 0;
+  font-size: 22px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
-.card-body {
-  margin: 12px 0 0;
+.addon-table {
+  width: 100%;
+  margin-top: 24px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.addon-table thead th {
+  padding: 0 0 10px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.addon-name {
+  padding: 16px 16px 16px 0;
+  border-bottom: 0.5px solid var(--rule);
   font-size: 15px;
   font-weight: 400;
-  line-height: 1.55;
-  color: var(--grey-1);
-  max-width: 38ch;
+  line-height: 1.45;
+  color: var(--text);
 }
 
-/* ====================================================== 5. how it works */
+.addon-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.addon-table td {
+  padding: 16px 0 16px 16px;
+  border-bottom: 0.5px solid var(--rule);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.addon-hours {
+  color: var(--muted);
+}
+
+.addon-price {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.addon-note {
+  margin: 48px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* ================================================ 6. what it costs (dark) */
+
+.section-dark {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+.cost-body {
+  margin-top: 40px;
+}
+
+.cost-para {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--dim-dark);
+  max-width: 62ch;
+}
+
+.cost-para + .cost-para {
+  margin-top: 24px;
+}
+
+/* ============================================================ 7. process */
 
 .steps {
+  list-style: none;
   display: grid;
   grid-template-columns: 1fr;
   gap: 40px;
+  margin: 56px 0 0;
+  padding: 0;
+}
+
+.step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
 }
 
 .step-n {
   font-size: 13px;
   font-weight: 400;
-  color: var(--grey-2);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
+.step-icon {
+  display: inline-flex;
+  color: var(--ink);
+}
+
 .step-title {
-  margin: 24px 0 0;
-  font-size: 24px;
+  margin: 20px 0 0;
+  font-size: 20px;
   font-weight: 400;
   letter-spacing: -0.02em;
 }
 
 .step-body {
   margin: 12px 0 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.55;
-  color: var(--grey-1);
-  max-width: 32ch;
+  color: var(--text);
 }
 
-/* ============================================================== 6. proof */
+/* ============================================================== 8. proof */
 
 .quote {
   margin: 96px 0 0;
@@ -184,10 +422,10 @@
   margin-top: 24px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
-/* ========================================================== 7. portfolio */
+/* ========================================================== 9. portfolio */
 
 .work-grid {
   display: grid;
@@ -199,8 +437,8 @@
 .work-card {
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
   border-radius: 16px;
   overflow: hidden;
   transition:
@@ -209,7 +447,7 @@
 }
 
 .work-card:hover {
-  border-color: rgba(10, 10, 10, 0.3);
+  border-color: var(--rule-strong);
   transform: translateY(-3px);
 }
 
@@ -249,11 +487,11 @@
 .work-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin: 8px 0 0;
+  gap: 6px;
+  margin: 10px 0 0;
   font-size: 12px;
   font-weight: 400;
-  color: var(--grey-2);
+  color: var(--text);
 }
 
 .work-pin {
@@ -265,7 +503,7 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 1.55;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .work-cta {
@@ -275,265 +513,7 @@
   margin-top: 48px;
 }
 
-/* ============================================================ 8. pricing */
-
-.tier-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--gutter);
-  margin-top: 56px;
-}
-
-.tier {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
-  border-radius: 16px;
-  padding: 32px;
-  transition: border-color 0.25s ease;
-}
-
-.tier:hover {
-  border-color: rgba(10, 10, 10, 0.3);
-}
-
-.tier-featured {
-  border-color: var(--ink);
-}
-
-.tier-flag {
-  position: absolute;
-  top: -10px;
-  left: 32px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background-color: var(--ink);
-  color: var(--paper);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.tier-name {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.tier-price {
-  margin-top: 14px;
-  font-size: 40px;
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.tier-for {
-  margin: 12px 0 0;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--grey-1);
-}
-
-.tier-list {
-  list-style: none;
-  margin: 28px 0 auto;
-  padding: 0;
-}
-
-.tier-item {
-  padding: 12px 0;
-  border-top: 0.5px solid var(--grey-3);
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.45;
-  color: var(--grey-1);
-}
-
-.tier-cta {
-  margin-top: 28px;
-  width: 100%;
-}
-
-/* ========================================================= 9. full cycle */
-
-.cycle {
-  list-style: none;
-  margin: 56px 0 0;
-  padding: 0;
-}
-
-.cycle-row {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: start;
-  gap: 14px 16px;
-  padding: 26px 0;
-  border-top: 0.5px solid var(--grey-3);
-}
-
-.cycle-row:last-child {
-  border-bottom: 0.5px solid var(--grey-3);
-}
-
-.cycle-index {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--grey-2);
-  font-variant-numeric: tabular-nums;
-  padding-top: 12px;
-}
-
-.cycle-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 0.5px solid var(--grey-3);
-  background-color: #ffffff;
-  color: var(--ink);
-  flex-shrink: 0;
-}
-
-.cycle-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  padding-top: 8px;
-}
-
-.cycle-body {
-  margin: 8px 0 0;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.55;
-  color: var(--grey-1);
-  max-width: 56ch;
-}
-
-.cycle-owned {
-  grid-column: 3;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  color: var(--grey-2);
-  text-transform: lowercase;
-}
-
-.cycle-foot {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  margin-top: 40px;
-}
-
-.cycle-note {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--grey-2);
-  max-width: 46ch;
-}
-
-/* ==================================================== 10. servers (dark) */
-
-.section-dark {
-  background-color: var(--ink);
-  color: var(--paper);
-}
-
-.server-facts {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin: 48px 0 0;
-}
-
-.server-fact dt {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 400;
-  color: rgba(250, 250, 249, 0.45);
-}
-
-.server-fact dd {
-  margin: 6px 0 0;
-  font-size: 15px;
-  font-weight: 400;
-  color: var(--paper);
-}
-
-.servers-cta {
-  margin-top: 44px;
-}
-
-.server-card {
-  padding: 28px;
-  border: 0.5px solid rgba(250, 250, 249, 0.2);
-  border-radius: 16px;
-  transition: border-color 0.25s ease;
-}
-
-.server-card + .server-card {
-  margin-top: var(--gutter);
-}
-
-.server-card:hover {
-  border-color: rgba(250, 250, 249, 0.45);
-}
-
-.server-card-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 0.5px solid rgba(250, 250, 249, 0.2);
-  color: var(--paper);
-}
-
-.server-card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 22px;
-}
-
-.server-card-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--paper);
-}
-
-.server-card-region {
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  color: rgba(250, 250, 249, 0.45);
-  white-space: nowrap;
-}
-
-.server-card-blurb {
-  margin: 12px 0 0;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.55;
-  color: rgba(250, 250, 249, 0.7);
-}
-
-/* ============================================================= 11. specs */
+/* ============================================================= 10. specs */
 
 .specs-heading {
   margin-bottom: 64px;
@@ -548,18 +528,18 @@
   grid-template-columns: 1fr;
   gap: 4px;
   padding: 20px 0;
-  border-top: 0.5px solid var(--grey-3);
+  border-top: 0.5px solid var(--rule);
 }
 
 .spec-row:last-child {
-  border-bottom: 0.5px solid var(--grey-3);
+  border-bottom: 0.5px solid var(--rule);
 }
 
 .spec-label {
   margin: 0;
   font-size: 15px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--muted);
 }
 
 .spec-value {
@@ -567,6 +547,30 @@
   font-size: 15px;
   font-weight: 400;
   color: var(--ink);
+}
+
+/* =============================================================== 11. faq */
+
+.faq {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+}
+
+.faq-q {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.faq-a {
+  margin: 12px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text);
+  max-width: 58ch;
 }
 
 /* ============================================================= 12. owner */
@@ -579,11 +583,11 @@
 }
 
 .owner-links li {
-  border-top: 0.5px solid var(--grey-3);
+  border-top: 0.5px solid var(--rule);
 }
 
 .owner-links li:last-child {
-  border-bottom: 0.5px solid var(--grey-3);
+  border-bottom: 0.5px solid var(--rule);
 }
 
 .owner-link {
@@ -625,7 +629,7 @@
   width: min(520px, 78%);
   aspect-ratio: 1 / 1;
   border-radius: 16px;
-  background-color: var(--grey-3);
+  background-color: var(--rule);
   opacity: 0.15;
   display: flex;
   align-items: center;
@@ -636,7 +640,7 @@
 .cta-ghost-label {
   font-size: 11px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .cta-inner {
@@ -651,7 +655,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 1.55;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .cta-pills {
@@ -683,24 +687,8 @@
   }
 
   .steps {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-  }
-
-  .step {
-    padding: 0 48px;
-  }
-
-  .step:first-child {
-    padding-left: 0;
-  }
-
-  .step:last-child {
-    padding-right: 0;
-  }
-
-  .step + .step {
-    border-left: 0.5px solid var(--grey-3);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 48px 40px;
   }
 
   .quote {
@@ -717,37 +705,51 @@
     padding: 40px 32px;
   }
 
-  .cycle-row {
-    grid-template-columns: 46px 40px 1fr 150px;
-    align-items: center;
-    gap: 24px;
-    padding: 30px 0;
+  .addon-name {
+    padding-right: 40px;
   }
 
-  .cycle-owned {
-    grid-column: 4;
-    text-align: right;
+  .addon-table td {
+    padding-left: 32px;
   }
 
-  .cycle-foot {
-    flex-direction: row;
-    align-items: center;
-    gap: 28px;
+  .faq {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 48px var(--gutter);
   }
 
-  .servers-grid,
   .owner-grid {
     align-items: start;
-  }
-
-  .server-facts {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 28px 32px;
   }
 
   .spec-row {
     grid-template-columns: 4fr 8fr;
     gap: var(--gutter);
     padding: 24px 0;
+  }
+}
+
+/* ============================================== wide — five steps in a row */
+
+@media (min-width: 1100px) {
+  .steps {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+  }
+
+  .step {
+    padding: 0 28px;
+  }
+
+  .step:first-child {
+    padding-left: 0;
+  }
+
+  .step:last-child {
+    padding-right: 0;
+  }
+
+  .step + .step {
+    border-left: 0.5px solid var(--rule);
   }
 }

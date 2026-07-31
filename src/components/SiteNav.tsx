@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Plus } from 'lucide-react'
 import { Link, scrollToId, useRouter } from '../router'
 import { useChat } from './ChatWidget'
 import { LogoMark, Logotype } from './Brand'
+import { IconCross, IconPlus } from './icons'
 import { BRAND, HERO } from '../data/copy'
 import { EASE } from './motion-presets'
 import './SiteNav.css'
@@ -15,11 +15,12 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { label: 'Motion demos', to: '/', id: 'motion' },
-  { label: 'Sample builds', to: '/', id: 'work' },
   { label: 'Prices', to: '/', id: 'pricing' },
-  { label: 'Full cycle', to: '/', id: 'cycle' },
-  { label: 'Servers', to: '/', id: 'servers' },
+  { label: 'Everything else', to: '/', id: 'addons' },
+  { label: 'Motion demos', to: '/', id: 'motion' },
+  { label: 'How it goes', to: '/', id: 'process' },
+  { label: 'Sample builds', to: '/', id: 'work' },
+  { label: 'Questions', to: '/', id: 'faq' },
   { label: 'Client map', to: '/work-map' },
 ]
 
@@ -91,25 +92,24 @@ export default function SiteNav() {
           <span className="sr-only">{BRAND}</span>
         </Link>
 
+        {/* The glyph swaps whole, rather than rotating 135 degrees as it used
+            to: a pixel grid turned off-axis resamples to mush, and the brief is
+            explicit that pixel art switches frames like a sprite. */}
         <button
           className="menu-button"
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
         >
-          <motion.span
-            className="menu-icon"
-            animate={{ rotate: menuOpen ? 135 : 0 }}
-            transition={{ duration: 0.4, ease: EASE }}
-          >
-            <Plus size={12} strokeWidth={3} />
-          </motion.span>
+          <span className="menu-icon">
+            {menuOpen ? <IconCross size={16} /> : <IconPlus size={16} />}
+          </span>
           <span className="menu-label">Menu</span>
         </button>
 
         <div className="tags-pill">
           <span className="tags-pill-item">Motion in house</span>
-          <span className="tags-pill-item">From $200</span>
+          <span className="tags-pill-item">$999 flat</span>
         </div>
 
         <AnimatePresence>

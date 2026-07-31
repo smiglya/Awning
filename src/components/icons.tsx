@@ -1,212 +1,514 @@
-import type { ReactNode } from 'react'
-
 /**
- * House icon set. One 24x24 grid, 1.25 stroke, currentColor, no fills.
+ * House icon set. Pixel art on a 16x16 module grid, and nothing else.
  *
- * Drawn rather than imported so the whole set shares a geometry: straight runs,
- * right angles, and small solid nodes for emphasis. Reads as instrumentation,
- * not as friendly rounded UI clip-art.
+ * The key in the logotype is set from rectangular modules, so the icons are set
+ * the same way — that is the whole reason this is pixel art rather than a
+ * fashion. Mixing these with line icons on one screen breaks the join, so there
+ * are no line icons left anywhere on the site: either everything is pixel or
+ * nothing is.
+ *
+ * Rules the drawings keep, all of them checkable and checked in
+ * tests/design-system.test.ts:
+ *
+ *   - 16x16 modules, nothing outside the grid, no fractional cell
+ *   - <rect> on whole coordinates, shape-rendering crispEdges, no antialiasing
+ *   - fill="currentColor" on the root, no stroke — a rasteriser that ignores
+ *     stroke drops the outline silently, and silence is the bad failure here
+ *   - one module minimum, two for the main silhouette
+ *   - diagonals staircase 1:1, never a smoothed slope
+ *   - orange is at most one connected group of cells, and only on icons that
+ *     sit beside an action
+ *
+ * Sizes: the module lands on whole pixels at 16, 32 and 48. 24 is the
+ * legibility floor the brief sets, not a preferred size — every glyph here has
+ * to survive it, which is why none of them carries a one-module detail that
+ * only the two-module version of the same shape could have carried.
  */
 
+const GRID = 16
+
+/**
+ * '#' ink, 'o' the accent cell, anything else empty.
+ *
+ * Written as pictures rather than coordinates on purpose: a bitmap is the one
+ * representation where a wrong cell is visible in the diff, and where "the bit
+ * matches the logo" is something a reviewer can check by looking.
+ */
+type Bitmap = readonly string[]
+
+interface Run {
+  x: number
+  y: number
+  w: number
+}
+
+/** Horizontal runs of matching cells, so one rect covers a whole span. */
+function runs(rows: Bitmap, glyphs: string): Run[] {
+  const out: Run[] = []
+
+  rows.forEach((row, y) => {
+    let x = 0
+    while (x < GRID) {
+      if (!glyphs.includes(row[x] ?? '.')) {
+        x += 1
+        continue
+      }
+      let w = 1
+      while (x + w < GRID && glyphs.includes(row[x + w] ?? '.')) w += 1
+      out.push({ x, y, w })
+      x += w
+    }
+  })
+
+  return out
+}
+
 export interface IconProps {
+  /** 16, 32 or 48 keep the module on whole pixels. 24 is the floor. */
   size?: number
   className?: string
+  /**
+   * Light the accent cells. Off by default, and deliberately so: the glyph has
+   * to be complete without it, and on an orange ground an orange cell is not a
+   * highlight, it is a hole. The hero arrow rides on --cta and passes false.
+   */
+  accent?: boolean
 }
 
-function Svg({ children, size = 24, className }: IconProps & { children: ReactNode }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.25"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  )
+function pixels(rows: Bitmap) {
+  return function Icon({ size = 32, className, accent = false }: IconProps) {
+    // with the accent off, the hot cells fall back to ink, so the silhouette
+    // never depends on whether the colour was allowed
+    const ink = runs(rows, accent ? '#' : '#o')
+    const hot = accent ? runs(rows, 'o') : []
+
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${GRID} ${GRID}`}
+        fill="currentColor"
+        shapeRendering="crispEdges"
+        className={className}
+        aria-hidden="true"
+        focusable="false"
+      >
+        {ink.map((r) => (
+          <rect key={`i${r.y}-${r.x}`} x={r.x} y={r.y} width={r.w} height={1} />
+        ))}
+        {hot.length > 0 && (
+          <g fill="var(--accent)">
+            {hot.map((r) => (
+              <rect key={`a${r.y}-${r.x}`} x={r.x} y={r.y} width={r.w} height={1} />
+            ))}
+          </g>
+        )}
+      </svg>
+    )
+  }
 }
 
-/* --------------------------------------------------------------- why us */
+/* ------------------------------------------------------------ why us cards */
 
-/** Found on the map: concentric sweep around a pin. */
-export const IconRadar = (props: IconProps) => (
-  <Svg {...props}>
-    <circle cx="12" cy="12" r="2.25" />
-    <path d="M12 9.75V3.5" />
-    <path d="M5.6 18.4a9 9 0 0 1 0-12.8" />
-    <path d="M18.4 5.6a9 9 0 0 1 0 12.8" />
-    <path d="M8.5 15.5a5 5 0 0 1 0-7" />
-    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-  </Svg>
-)
+/** Built to be found: a pin with a ring punched through the head. */
+export const IconPin = pixels([
+  '................',
+  '.....######.....',
+  '....########....',
+  '...##########...',
+  '..############..',
+  '..####....####..',
+  '..####....####..',
+  '..####....####..',
+  '..############..',
+  '...##########...',
+  '....########....',
+  '.....######.....',
+  '......####......',
+  '.......##.......',
+  '.......##.......',
+  '................',
+])
 
-/** Nothing monthly: the recurrence loop, cut. */
-export const IconNoLoop = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M4.5 12a7.5 7.5 0 0 1 12.3-5.8" />
-    <path d="M19.5 12a7.5 7.5 0 0 1-12.3 5.8" />
-    <path d="M17 3.2v3.4h-3.4" />
-    <path d="M7 20.8v-3.4h3.4" />
-    <path d="M4 20 20 4" />
-  </Svg>
-)
+/** Nothing monthly: the calendar, struck through. */
+export const IconNoCalendar = pixels([
+  '...##......##...',
+  '...##......##...',
+  '.##############.',
+  '.##############.',
+  '.##############.',
+  '.##.......##.##.',
+  '.##......##..##.',
+  '.##.....##...##.',
+  '.##....##....##.',
+  '.##...##.....##.',
+  '.##..##......##.',
+  '.##.##.......##.',
+  '.####........##.',
+  '.##############.',
+  '.##############.',
+  '................',
+])
 
-/** We do the writing: a draft with a caret sitting in it. */
-export const IconDraft = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M5.5 3.5h9l4.5 4.5v12a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-16a.5.5 0 0 1 .5-.5Z" />
-    <path d="M14.5 3.5V8h4.5" />
-    <path d="M8.5 12.5h7" />
-    <path d="M8.5 16h4.5" />
-    <path d="M16.5 15v2.5" />
-  </Svg>
-)
+/** We do the writing: an I-beam caret standing beside three lines of text. */
+export const IconWriting = pixels([
+  '................',
+  '................',
+  '.####...........',
+  '..##..#########.',
+  '..##..#########.',
+  '..##............',
+  '..##..#########.',
+  '..##..#########.',
+  '..##............',
+  '..##..######....',
+  '..##..######....',
+  '..##............',
+  '.####...........',
+  '................',
+  '................',
+  '................',
+])
 
-/** Two languages: the same block, twice, offset. */
-export const IconTwoTongues = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M3.5 5.5h9v7h-4l-2.5 2.5v-2.5h-2.5Z" />
-    <path d="M11.5 9.5h9v7h-2.5V19L15.5 16.5h-4" />
-    <path d="M6 9h4" />
-    <path d="M14.5 13h4" />
-  </Svg>
-)
+/** Two languages: the same bubble twice, offset. */
+export const IconTwoTongues = pixels([
+  '.##########.....',
+  '.##########.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##########.....',
+  '.##########.....',
+  '...##...........',
+  '...##...........',
+  '.......########.',
+  '.......########.',
+  '.......##....##.',
+  '.......##....##.',
+  '.......########.',
+  '.......########.',
+  '...........##...',
+])
 
-/* ----------------------------------------------------------- full cycle */
+/* ------------------------------------------------------------------- the key */
 
-export const IconBrief = (props: IconProps) => (
-  <Svg {...props}>
-    <rect x="3.5" y="6.5" width="17" height="13" rx="1" />
-    <path d="M9 6.5V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5" />
-    <path d="M3.5 11.5h17" />
-    <circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
-  </Svg>
-)
+/**
+ * You get the keys. The bit is the logotype's, module for module.
+ *
+ * brand/letter-i-key.svg sets its teeth by insetting the left edge 0, 1, 2 then
+ * 1 modules from the shaft, each tooth two module-rows deep, with the right
+ * edge running straight down as the stem. That is the pattern below, and it is
+ * the reason this glyph is not free-drawn: the logo already carries the
+ * turnkey idea, the copy already says keys, and an icon that invented its own
+ * teeth would quietly break the rhyme the section is built on.
+ *
+ * The accent is one connected group at the deepest tooth, on the silhouette
+ * edge where it actually reads rather than buried inside the ink.
+ */
+export const IconKey = pixels([
+  '........######..',
+  '.......########.',
+  '.......##....##.',
+  '.......##....##.',
+  '.......########.',
+  '........######..',
+  '......######....',
+  '......######....',
+  '.......#####....',
+  '.......#####....',
+  '........o###....',
+  '........o###....',
+  '.......#####....',
+  '.......#####....',
+  '..........##....',
+  '..........##....',
+])
 
-export const IconLayout = (props: IconProps) => (
-  <Svg {...props}>
-    <rect x="3.5" y="4.5" width="17" height="15" rx="1" />
-    <path d="M3.5 9h17" />
-    <path d="M10 9v10.5" />
-    <path d="M13 12.5h4.5" />
-    <path d="M13 15.5h4.5" />
-  </Svg>
-)
+/* -------------------------------------------------- icons beside an action */
 
-/** Motion: an arc with the moving node still on it. */
-export const IconMotion = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M3.5 17.5c4-9 9.5-11.5 17-9" strokeDasharray="1.5 2.5" />
-    <circle cx="17.5" cy="8" r="2.4" fill="currentColor" stroke="none" />
-    <path d="M3.5 20.5h6" />
-  </Svg>
-)
+/** Hero and pill arrow. The tip is the accent when the ground is paper. */
+export const IconArrow = pixels([
+  '................',
+  '................',
+  '................',
+  '................',
+  '.........##.....',
+  '..........##....',
+  '...........##...',
+  '..###########o..',
+  '..###########o..',
+  '...........##...',
+  '..........##....',
+  '.........##.....',
+  '................',
+  '................',
+  '................',
+  '................',
+])
 
-export const IconBuild = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M8.5 8 4 12l4.5 4" />
-    <path d="M15.5 8 20 12l-4.5 4" />
-    <path d="M13.5 4.5 10.5 19.5" />
-  </Svg>
-)
+/** Most taken. The accent is the star's core. */
+export const IconStar = pixels([
+  '................',
+  '.......##.......',
+  '......####......',
+  '......####......',
+  '.....######.....',
+  '################',
+  '.##############.',
+  '..#####oo#####..',
+  '...####oo####...',
+  '....########....',
+  '...##########...',
+  '..####....####..',
+  '.####......####.',
+  '####........####',
+  '................',
+  '................',
+])
 
-export const IconContent = (props: IconProps) => (
-  <Svg {...props}>
-    <rect x="3.5" y="4.5" width="17" height="15" rx="1" />
-    <path d="M3.5 15.5 8 11l3.5 3.5L15 11l5.5 5.5" />
-    <circle cx="8.5" cy="8.5" r="1.4" />
-  </Svg>
-)
+/** Request received. The accent is where the stroke lands. */
+export const IconCheck = pixels([
+  '................',
+  '................',
+  '................',
+  '................',
+  '.............o..',
+  '............oo..',
+  '...........##...',
+  '..#.......##....',
+  '..##.....##.....',
+  '...##...##......',
+  '....##.##.......',
+  '.....###........',
+  '......##........',
+  '................',
+  '................',
+  '................',
+])
 
-/** Server: rack units, one live. */
-export const IconServer = (props: IconProps) => (
-  <Svg {...props}>
-    <rect x="3.5" y="4" width="17" height="6" rx="1" />
-    <rect x="3.5" y="14" width="17" height="6" rx="1" />
-    <circle cx="7" cy="7" r="1.05" fill="currentColor" stroke="none" />
-    <circle cx="7" cy="17" r="1.05" fill="currentColor" stroke="none" />
-    <path d="M11 7h6" />
-    <path d="M11 17h6" />
-  </Svg>
-)
+/* -------------------------------------------------- add-on group headings */
 
-/* --------------------------------------------------------------- region */
+/** Design and brand: a nib, flat topped, slit down the middle. */
+export const IconNib = pixels([
+  '................',
+  '..############..',
+  '..############..',
+  '..############..',
+  '...####..####...',
+  '...####..####...',
+  '....########....',
+  '....########....',
+  '.....######.....',
+  '.....######.....',
+  '......####......',
+  '......####......',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '................',
+])
 
-export const IconGlobe = (props: IconProps) => (
-  <Svg {...props}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M3.5 12h17" />
-    <path d="M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.6-5.2-3.6-8.5S9.6 5.8 12 3.5Z" />
-  </Svg>
-)
+/** Features: a gear, square because a round one costs its teeth at 24px. */
+export const IconGear = pixels([
+  '...##......##...',
+  '...##......##...',
+  '..############..',
+  '..############..',
+  '..############..',
+  '..############..',
+  '######....######',
+  '######....######',
+  '######....######',
+  '######....######',
+  '..############..',
+  '..############..',
+  '..############..',
+  '..############..',
+  '...##......##...',
+  '...##......##...',
+])
 
-export const IconPin = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M12 21c4-4.6 6-8 6-10.6A6 6 0 0 0 6 10.4C6 13 8 16.4 12 21Z" />
-    <circle cx="12" cy="10.3" r="2.2" />
-  </Svg>
-)
+/** Getting found: a glass with a staircase handle. */
+export const IconGlass = pixels([
+  '..########......',
+  '.##########.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##......##.....',
+  '.##########.....',
+  '..########......',
+  '..........##....',
+  '...........##...',
+  '............##..',
+  '.............##.',
+  '..............##',
+  '................',
+  '................',
+])
 
-/* ------------------------------------------------------------ utilities */
+/** After launch: an open-ended wrench. */
+export const IconWrench = pixels([
+  '.##..##.........',
+  '.##..##.........',
+  '.######.........',
+  '.######.........',
+  '..####..........',
+  '...####.........',
+  '....####........',
+  '.....####.......',
+  '......####......',
+  '.......####.....',
+  '........####....',
+  '.........####...',
+  '..........####..',
+  '...........####.',
+  '............##..',
+  '................',
+])
 
-export const IconArrow = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M4.5 12h15" />
-    <path d="M13.5 6l6 6-6 6" />
-  </Svg>
-)
+/** Speed: the bolt. */
+export const IconBolt = pixels([
+  '................',
+  '........####....',
+  '.......####.....',
+  '......####......',
+  '.....####.......',
+  '....##########..',
+  '....##########..',
+  '.......####.....',
+  '......####......',
+  '.....####.......',
+  '....####........',
+  '...####.........',
+  '..####..........',
+  '................',
+  '................',
+  '................',
+])
 
-export const IconCheck = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />
-  </Svg>
-)
+/* ------------------------------------------------------------- ui controls */
 
-/* ------------------------------------------------- footer social glyphs */
+/**
+ * Menu open and shut. Two whole glyphs rather than one rotated 135 degrees:
+ * a pixel grid that turns off-axis resamples to mush, and the brief is explicit
+ * that pixel art switches whole frames like a sprite instead of morphing.
+ */
+export const IconPlus = pixels([
+  '................',
+  '................',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '..############..',
+  '..############..',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '.......##.......',
+  '................',
+  '................',
+])
 
-export const IconNode = (props: IconProps) => (
-  <Svg {...props}>
-    <circle cx="12" cy="6" r="2.4" />
-    <circle cx="6" cy="17" r="2.4" />
-    <circle cx="18" cy="17" r="2.4" />
-    <path d="M10.4 8 7.4 14.8" />
-    <path d="M13.6 8l3 6.8" />
-  </Svg>
-)
+export const IconCross = pixels([
+  '................',
+  '................',
+  '................',
+  '...##......##...',
+  '....##....##....',
+  '.....##..##.....',
+  '......####......',
+  '.......##.......',
+  '......####......',
+  '.....##..##.....',
+  '....##....##....',
+  '...##......##...',
+  '..##........##..',
+  '................',
+  '................',
+  '................',
+])
 
-export const IconSignal = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M5 15.5v3" />
-    <path d="M9.6 11.5v7" />
-    <path d="M14.3 8v10.5" />
-    <path d="M19 4.5v14" />
-  </Svg>
-)
+/* ------------------------------------------------- footer marks, abstract */
 
-export const IconFrame = (props: IconProps) => (
-  <Svg {...props}>
-    <rect x="4.5" y="4.5" width="15" height="15" rx="1" />
-    <path d="M4.5 9.5h15" />
-    <path d="M9.5 4.5v15" />
-  </Svg>
-)
+export const IconMatrix = pixels([
+  '................',
+  '.###..###..###..',
+  '.###..###..###..',
+  '.###..###..###..',
+  '................',
+  '................',
+  '.###..###..###..',
+  '.###..###..###..',
+  '.###..###..###..',
+  '................',
+  '................',
+  '.###..###..###..',
+  '.###..###..###..',
+  '.###..###..###..',
+  '................',
+  '................',
+])
 
-export const IconOrbit = (props: IconProps) => (
-  <Svg {...props}>
-    <circle cx="12" cy="12" r="3.2" />
-    <ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(-30 12 12)" />
-  </Svg>
-)
+export const IconSignal = pixels([
+  '................',
+  '................',
+  '.............##.',
+  '.............##.',
+  '.............##.',
+  '.........##..##.',
+  '.........##..##.',
+  '.........##..##.',
+  '.....##..##..##.',
+  '.....##..##..##.',
+  '.....##..##..##.',
+  '.##..##..##..##.',
+  '.##..##..##..##.',
+  '.##..##..##..##.',
+  '.##..##..##..##.',
+  '................',
+])
 
-export const SOCIAL_ICONS: Array<(props: IconProps) => ReactNode> = [
-  IconNode,
-  IconSignal,
-  IconFrame,
-  IconOrbit,
-]
+export const IconFrame = pixels([
+  '................',
+  '.##############.',
+  '.##############.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##############.',
+  '.##############.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##...##.....##.',
+  '.##############.',
+  '.##############.',
+  '................',
+])
+
+export const IconOrbit = pixels([
+  '................',
+  '................',
+  '....########....',
+  '...##########...',
+  '..############..',
+  '..##........##..',
+  '..##..####..##..',
+  '..##..####..##..',
+  '..##..####..##..',
+  '..##..####..##..',
+  '..##........##..',
+  '..############..',
+  '...##########...',
+  '....########....',
+  '................',
+  '................',
+])
+
+export const SOCIAL_ICONS = [IconMatrix, IconSignal, IconFrame, IconOrbit]

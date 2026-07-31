@@ -8,6 +8,7 @@ import {
   SITE_URL,
 } from '../src/seo'
 import { toAppPath, toHref } from '../src/router'
+import { PRICING } from '../src/data/copy'
 
 /**
  * The site sells "built to be found", so these are correctness tests, not
@@ -90,8 +91,13 @@ describe('structured data', () => {
   })
 
   it('declares the price range that the page actually shows', () => {
-    expect(serialised).toContain('"lowPrice":"200"')
-    expect(serialised).toContain('"highPrice":"900"')
+    // Read off the tiers rather than restated. The hardcoded "200" and "900"
+    // that used to sit here outlived the offer they described, because
+    // structured data is the one surface nobody looks at while repricing.
+    const low = PRICING.tiers[0]?.amount
+    const high = PRICING.tiers[PRICING.tiers.length - 1]?.amount
+    expect(serialised).toContain(`"lowPrice":"${low}"`)
+    expect(serialised).toContain(`"highPrice":"${high}"`)
   })
 
   it('puts a breadcrumb on the inner route but not on the home page', () => {

@@ -1,7 +1,7 @@
 # Awning
 
 Motion-led marketing site for a web studio selling turnkey websites to local
-businesses in New York City. Flat $200–900, live in one to two days.
+businesses in New York City. $999 flat, live 48 hours after the brief.
 
 **Live preview:** https://smiglya.github.io/Awning/
 

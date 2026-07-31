@@ -20,7 +20,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 const INK = [0x0a, 0x0a, 0x0a]
 const PAPER = [0xfa, 0xfa, 0xf9]
-const GREY = [0xde, 0xde, 0xda]
 
 const artwork = (name) => parseSvg(readFileSync(join(root, 'brand', name), 'utf8')).shapes
 
@@ -81,6 +80,16 @@ function encodePng(width, height, pixels) {
 }
 
 /* ------------------------------------------------------------- compositing */
+
+/**
+ * Ink laid over paper at some alpha.
+ *
+ * There is no third grey any more. The palette is seven colours and every
+ * hairline on the site is --ink thinned — .rule is that same value at 0.14 —
+ * so the card is drawn the same way rather than from a swatch that used to be
+ * --grey-3 and now names nothing.
+ */
+const rule = (alpha) => mix(PAPER, INK, alpha)
 
 function mix(a, b, t) {
   return [
@@ -150,7 +159,7 @@ function drawOgImage() {
   canvas.each((x, y) => {
     if (y >= bandTop) return INK
     // faint plotting grid, same 64px module as the showcase section
-    if (x % 64 === 0 || y % 64 === 0) return mix(PAPER, GREY, 0.55)
+    if (x % 64 === 0 || y % 64 === 0) return rule(0.08)
     return PAPER
   })
 
@@ -160,7 +169,7 @@ function drawOgImage() {
   // lockup — which quietly moves it off that shared left edge.
   const margin = 160
   const measure = 1200 - margin * 2
-  const lockup = artwork('awning-logotype.svg')
+  const lockup = artwork('logo-flat.svg')
   const bounds = inkBounds(lockup)
 
   canvas.draw(
@@ -187,8 +196,8 @@ function drawOgImage() {
 function drawPoster() {
   const canvas = new Canvas(1280, 720)
 
-  canvas.each((x, y) => (x % 80 === 0 || y % 80 === 0 ? mix(PAPER, GREY, 0.4) : PAPER))
-  canvas.draw(artwork('logo.svg'), { x: 490, y: 210, width: 300, height: 300 }, GREY)
+  canvas.each((x, y) => (x % 80 === 0 || y % 80 === 0 ? rule(0.06) : PAPER))
+  canvas.draw(artwork('logo.svg'), { x: 490, y: 210, width: 300, height: 300 }, rule(0.16))
 
   return canvas.toPng()
 }

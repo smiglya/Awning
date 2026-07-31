@@ -116,7 +116,7 @@ export const FORM_FIELDS: FormField[] = [
     label: 'Rough budget',
     type: 'select',
     required: false,
-    options: ['$200 to $400', '$400 to $650', '$650 to $900', 'Not sure yet'],
+    options: ['$999 to $1,795', '$1,795 to $3,379', 'Over $3,379', 'Not sure yet'],
   },
 ]
 
@@ -127,11 +127,11 @@ export const FORM_FIELDS: FormField[] = [
 export const SUPPORT_SCRIPT = [
   'Thanks for the details. Your request is {ticket}, and it stays here if you close the tab.',
   'One question decides the price: do people need to book or order online, or just find you and call?',
-  'Find and call is $450. Booking or ordering is $700. One payment, no monthly fee.',
-  'Build time is 1 to 2 days from when I have your photos, hours and address.',
+  'Find and call is $999. Booking or ordering is $1,795. One payment, no monthly fee.',
+  'Build time is 48 hours on the $999 site and one week on the $1,795 build, counted from when I have your photos, hours and address.',
   'Next step: tap Email this to us. It carries {ticket} and your answers so you retype nothing.',
 ]
 
 /** Swapped in for s3 when the visitor picked the lowest budget band. */
 export const SUPPORT_SCRIPT_LOW_BUDGET =
-  'A one page site is $300. Find and call with a few pages is $450. One payment, no monthly fee.'
+  'Three pages, written for you, is $999. Seven pages built around one action is $1,795. One payment, no monthly fee.'

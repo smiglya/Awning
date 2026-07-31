@@ -38,7 +38,7 @@ export const ROUTE_META: RouteMeta[] = [
     path: '/',
     title: `${BRAND} — websites for local NYC businesses`,
     description:
-      'Turnkey websites for New York local business. Flat $200–900, paid once, live in one to two days. Motion designed in house, no monthly fee.',
+      'Turnkey websites for New York local business. $999 flat, paid once, live 48 hours after the brief. Motion drawn in house, no monthly fee, every login yours.',
     canonical: '/',
     changefreq: 'weekly',
     priority: '1.0',
@@ -92,9 +92,12 @@ export function isIndexable(route: RouteMeta): boolean {
  * pack is exactly what earns a manual penalty. Register as a service-area
  * business in Google Business Profile instead, then this can gain an address.
  *
- * Review and AggregateRating are deliberately absent: the testimonial on the
- * page is labelled a sample and the twelve clients are invented. Marking up
- * fabricated reviews is a manual-action risk and, in the US, an FTC problem.
+ * No rating or testimonial markup of any kind is emitted: the quote on the page
+ * is labelled a sample and the twelve clients are invented. Marking up
+ * fabricated praise is a manual-action risk and, in the US, an FTC problem.
+ * tests/design-system.test.ts reads the emitted JSON-LD and fails if any of it
+ * appears — checking the output rather than this comment, because a comment
+ * saying the right thing is not the same as code doing it.
  */
 export function organizationJsonLd(): object {
   return {
@@ -124,8 +127,11 @@ export function serviceJsonLd(): object {
     offers: {
       '@type': 'AggregateOffer',
       priceCurrency: 'USD',
-      lowPrice: '200',
-      highPrice: '900',
+      // read off the tiers rather than written down, so a price change here is
+      // impossible to forget — the previous hardcoded pair outlived the offer
+      // it described, and structured data is the last place anyone looks
+      lowPrice: PRICING.tiers[0]?.amount ?? '999',
+      highPrice: PRICING.tiers[PRICING.tiers.length - 1]?.amount ?? '3379',
       offerCount: String(PRICING.tiers.length),
     },
     hasOfferCatalog: {
@@ -135,8 +141,19 @@ export function serviceJsonLd(): object {
         '@type': 'Offer',
         name: tier.name,
         description: tier.forWho,
-        price: tier.price.replace(/[^0-9]/g, ''),
+        price: tier.amount,
         priceCurrency: 'USD',
+        // Pro+ is a floor, and an Offer that says 3379 flat when the page says
+        // "from" is the kind of mismatch that gets structured data ignored
+        ...(tier.from
+          ? {
+              priceSpecification: {
+                '@type': 'PriceSpecification',
+                minPrice: tier.amount,
+                priceCurrency: 'USD',
+              },
+            }
+          : {}),
       })),
     },
   }

@@ -20,7 +20,6 @@
     "build:spa": "tsc --noEmit && vite build"
   },
   "dependencies": {
-    "lucide-react": "^0.469.0",
     "motion": "^12.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

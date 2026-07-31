@@ -56,7 +56,7 @@ export default function Footer() {
                 disabled={state === 'sending'}
                 aria-label="Subscribe"
               >
-                <IconArrow size={14} />
+                <IconArrow size={16} />
               </button>
             </form>
           )}

@@ -1,10 +1,35 @@
 :root {
-  /* palette — ink, paper, exactly three greys between */
-  --ink: #0a0a0a;
-  --paper: #fafaf9;
-  --grey-1: #6f6f6c; /* body copy */
-  --grey-2: #a3a39f; /* labels, secondary */
-  --grey-3: #dededa; /* hairlines, placeholder fills */
+  /**
+   * Seven colours, and the site may not contain an eighth.
+   *
+   * Orange means one thing — "pay or leave a request here" — so it is spent in
+   * exactly six places (see §5.3 in the brief, and .pill-cta below). Colour it
+   * anything else and the eye stops finding the button, which is the whole job
+   * the colour was hired for.
+   *
+   * Two contrast facts drive the rules that follow, measured rather than eyed:
+   * white on --cta is 3.56 and fails AA, --ink on --cta is 5.56 and passes. And
+   * --cta on --text is 2.37, so the dark band has to be --ink, not the warm
+   * grey. #514C4C is a text colour; it is never a full-bleed ground.
+   */
+  --ink: #0a0a0a; /* dark band, the mark, text on orange */
+  --paper: #fafaf9; /* page ground */
+  --cta: #ff3c00; /* conversion button fill. 5.56 against --ink */
+  --cta-hover: #ff3e04; /* hover and active of that same button, nothing else */
+  --accent: #ff6131; /* one cell of pixel art, focus ring on ink */
+  --text: #514c4c; /* body copy on paper. 8.08 */
+  --muted: #666060; /* secondary, 14px and up only. 5.90 */
+
+  /**
+   * --ink and --paper thinned. Not new colours — the same two values at alpha,
+   * which is how hairlines and the nav plate are specified in the brief.
+   */
+  --rule: rgba(10, 10, 10, 0.14);
+  --rule-strong: rgba(10, 10, 10, 0.32);
+  --rule-dark: rgba(250, 250, 249, 0.2);
+  --dim-dark: rgba(250, 250, 249, 0.7);
+  --faint-dark: rgba(250, 250, 249, 0.45);
+  --plate: rgba(250, 250, 249, 0.72);
 
   /* grid — 1440 canvas, 12 cols, 120px margins, 24px gutters */
   --canvas: 1440px;
@@ -42,6 +67,19 @@ html {
   html {
     scroll-behavior: auto;
   }
+
+  /**
+   * Pixel art switches whole frames like a sprite, never a smooth morph — so
+   * when it does animate it is a hard cut, which is exactly the kind of motion
+   * this preference exists to stop. Nothing animates today; the guard is here
+   * so the first sprite that gets added is already covered rather than
+   * shipping a flicker to the people who asked for none.
+   */
+  [shape-rendering='crispEdges'],
+  [shape-rendering='crispEdges'] * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 body {
@@ -78,9 +116,23 @@ input {
   color: var(--paper);
 }
 
+/**
+ * The ring is --cta on paper and --accent on ink, because --cta only reaches
+ * 3.41 against paper and 1.6 against ink — legible as a ring on the light
+ * ground, invisible on the dark one. --accent gets 6.61 on ink.
+ *
+ * This is the one place orange appears without meaning "press me", and it is
+ * the exception the brief makes: a focus ring is the keyboard user's cursor,
+ * not an advertisement.
+ */
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--cta);
   outline-offset: 3px;
+}
+
+.on-ink :focus-visible,
+.section-dark :focus-visible {
+  outline-color: var(--accent);
 }
 
 /* ============================================================= primitives */
@@ -130,12 +182,12 @@ input {
   font-size: clamp(1rem, 2.2vw, 1.25rem);
   font-weight: 400;
   line-height: 1.5;
-  color: var(--grey-1);
+  color: var(--text);
   max-width: 58ch;
 }
 
 .lede-dark {
-  color: rgba(250, 250, 249, 0.7);
+  color: var(--dim-dark);
 }
 
 .h2-dark {
@@ -170,7 +222,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--grey-3);
+  background-color: var(--rule);
   border-radius: 16px;
   /* placeholder blocks read as drafting paper, not as broken images */
   background-image: repeating-linear-gradient(
@@ -186,7 +238,7 @@ input {
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.02em;
-  color: var(--grey-1);
+  color: var(--text);
   padding: 0 12px;
   text-align: center;
 }
@@ -214,19 +266,30 @@ input {
   transform: translateY(1px);
 }
 
-.pill-fill {
-  background-color: var(--ink);
-  color: var(--paper);
+/**
+ * The conversion button, and the only filled button the page is allowed.
+ *
+ * Text is --ink rather than white on purpose: white on this orange measures
+ * 3.56 and fails AA, --ink measures 5.56 and passes. Every orange fill on the
+ * site carries ink type for that reason — there is no variant with white on it.
+ *
+ * hover swaps in --cta-hover, which is a shade apart from --cta and does
+ * nothing else anywhere. Deliberate: a hover state that is merely the fill at
+ * 85% opacity lets the ground through and drops the contrast under the text.
+ */
+.pill-cta {
+  background-color: var(--cta);
+  color: var(--ink);
 }
 
-.pill-fill:hover {
-  opacity: 0.85;
+.pill-cta:hover {
+  background-color: var(--cta-hover);
 }
 
 .pill-outline {
   background-color: transparent;
   color: var(--ink);
-  border: 0.5px solid rgba(10, 10, 10, 0.35);
+  border: 0.5px solid var(--rule-strong);
 }
 
 .pill-outline:hover {
@@ -234,14 +297,23 @@ input {
   border-color: var(--ink);
 }
 
-/* on ink grounds */
-.pill-invert {
-  background-color: var(--paper);
-  color: var(--ink);
+/* outline on ink grounds — the dark band gets no fill, so the one filled
+   button on that screen is still the orange one, wherever it happens to be */
+.pill-outline-dark {
+  background-color: transparent;
+  color: var(--paper);
+  border: 0.5px solid var(--rule-dark);
 }
 
-.pill-invert:hover {
-  opacity: 0.88;
+.pill-outline-dark:hover {
+  background-color: rgba(250, 250, 249, 0.08);
+  border-color: var(--paper);
+}
+
+/* the pixel arrow / star / check that rides inside a pill */
+.pill-icon {
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 /* ------------------------------------------------------------------ grid */

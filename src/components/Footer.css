@@ -7,7 +7,7 @@
 
 .foot-rule {
   height: 0;
-  border-top: 0.5px solid var(--grey-3);
+  border-top: 0.5px solid var(--rule);
 }
 
 /* ------------------------------------------------------------- signup */
@@ -38,7 +38,7 @@
   max-width: 320px;
   padding: 10px 0;
   border: none;
-  border-bottom: 0.5px solid var(--grey-3);
+  border-bottom: 0.5px solid var(--rule);
   background: transparent;
   font-size: 15px;
   font-weight: 400;
@@ -47,7 +47,7 @@
 }
 
 .foot-input::placeholder {
-  color: var(--grey-2);
+  color: var(--text);
 }
 
 .foot-input:focus {
@@ -83,7 +83,7 @@
   margin: 0 0 20px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .foot-col-list {
@@ -120,7 +120,7 @@
   margin: 0;
   font-size: 12px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .foot-social {
@@ -135,8 +135,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 0.5px solid var(--grey-3);
-  color: var(--grey-1);
+  border: 0.5px solid var(--rule);
+  color: var(--text);
   transition:
     color 0.2s ease,
     border-color 0.2s ease;
@@ -158,7 +158,7 @@
   margin: 10px 0 0;
   font-size: 12px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .foot-arrow:disabled {

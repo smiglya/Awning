@@ -147,7 +147,15 @@ function DigitColumn({
   )
 }
 
-export function RollingNumber({ value = '200', prefix = '$' }) {
+/**
+ * Default is the tier floor, not a round number picked for the demo.
+ *
+ * The prefix and the digits are separate nodes, assembled at render, so the
+ * previous value matched no search for a price and outlived a repricing that
+ * changed every other number on the page. tests/pages.test.tsx now reads the
+ * rendered text rather than the source for exactly that reason.
+ */
+export function RollingNumber({ value = '999', prefix = '$' }) {
   const reduced = useReducedMotion()
   const ref = useRef(null)
   const inView = useInView(ref, { amount: 0.6 })

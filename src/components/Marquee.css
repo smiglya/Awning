@@ -4,19 +4,22 @@
   background-color: var(--ink);
   color: var(--paper);
   padding: 16px 0;
-  /* the strip fades at both edges instead of hard-cutting the glyphs */
+  /* The strip fades at both edges instead of hard-cutting the glyphs.
+     A mask reads alpha, not hue, so the opaque stops are written with a palette
+     colour rather than a bare black — it masks identically and keeps the site
+     to the seven colours it declares. */
   mask-image: linear-gradient(
     to right,
     transparent 0,
-    #000 8%,
-    #000 92%,
+    var(--ink) 8%,
+    var(--ink) 92%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,
-    #000 8%,
-    #000 92%,
+    var(--ink) 8%,
+    var(--ink) 92%,
     transparent 100%
   );
 }

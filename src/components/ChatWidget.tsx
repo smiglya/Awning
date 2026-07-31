@@ -19,6 +19,7 @@ import {
   SUPPORT_SCRIPT_LOW_BUDGET,
 } from '../data/chatConfig'
 import { STICKY_CTA } from '../data/copy'
+import { IconArrow, IconCheck } from './icons'
 import {
   createLead,
   flushOutbox,
@@ -303,7 +304,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (scriptIndex.current >= SUPPORT_SCRIPT.length) setScriptDone(true)
       setTyping(true)
 
-      const isLowBudget = currentLead?.budget === '$200 to $400'
+      const isLowBudget = currentLead?.budget === '$999 to $1,795'
       const raw =
         index === 2 && isLowBudget
           ? SUPPORT_SCRIPT_LOW_BUDGET
@@ -822,6 +823,17 @@ function Thread({
         </div>
       )}
 
+      {/* The success state was written and never rendered — a request that
+          landed said nothing, while one that failed shouted. It gets the check
+          with its accent cell, the fourth of the icons that sit beside an
+          action. */}
+      {delivery === 'sent' && (
+        <p className="chat-delivered" role="status">
+          <IconCheck size={16} accent className="chat-delivered-icon" />
+          {CHAT_COPY.deliverySent}
+        </p>
+      )}
+
       <div className="chat-thread" ref={threadRef}>
         <div aria-live="polite">
           {messages.map((message) => (
@@ -895,16 +907,10 @@ function Thread({
           placeholder={CHAT_COPY.inputPlaceholder}
           aria-label={CHAT_COPY.inputPlaceholder}
         />
+        {/* pixel, like everything else, and never below 16px — at 12 it turns
+            to grit. The ink circle behind it supplies the paper colour. */}
         <button className="chat-send" type="submit" aria-label={CHAT_COPY.sendLabel}>
-          <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
-            <path
-              d="M2.5 6.5h8M7 3l3.5 3.5L7 10"
-              stroke="#fafaf9"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <IconArrow size={16} />
         </button>
       </form>
 

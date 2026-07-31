@@ -10,6 +10,15 @@
   gap: 12px;
   padding: 16px;
   pointer-events: none;
+
+  /**
+   * Clear space around the lockup is the height of the lowercase n, on all four
+   * sides. The n runs from y 140.5 to the 292.69 baseline inside a 388.69-unit
+   * box, so it is 0.392 of whatever height the lockup is set at — a ratio, not
+   * a pixel count, so changing --logo-h below keeps the rule true.
+   */
+  --logo-h: 24px;
+  --logo-clear: calc(var(--logo-h) * 0.392);
 }
 
 .navbar > * {
@@ -35,14 +44,15 @@
 
 .navbar-scrolled::before {
   opacity: 1;
-  border-bottom-color: var(--grey-3);
+  border-bottom-color: var(--rule);
 }
 
 .nav-left {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  /* nothing comes closer to the mark than its own clear space */
+  gap: var(--logo-clear);
 }
 
 .nav-right {
@@ -53,19 +63,40 @@
 
 /* ----------------------------------------------------------------- logo */
 
+/**
+ * At the top of the page the bar has no ground, so the mark lies straight on
+ * the video frame — and the frame goes dark. An ink lockup on a dark frame is
+ * simply gone, so the logo carries its own plate until the bar grows one.
+ *
+ * The plate is the paper at 0.72 with a blur, the value the brief specifies,
+ * and it is the same value .navbar::before uses: one plate hands over to the
+ * other on scroll instead of stacking into a double-frosted patch.
+ */
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--logo-clear);
+  padding: var(--logo-clear);
+  border-radius: 999px;
   text-decoration: none;
   color: var(--ink);
+  background-color: var(--plate);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background-color 0.35s ease;
+}
+
+.navbar-scrolled .logo {
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Height drives both: each viewBox is tight to the ink, so width follows from
    the aspect ratio and there is no phantom padding to compensate for. */
 .logo-mark {
   display: block;
-  height: 24px;
+  height: var(--logo-h);
   width: auto;
   flex-shrink: 0;
 }
@@ -87,7 +118,7 @@
  */
 .logo-type {
   display: none;
-  height: 34px;
+  height: var(--logo-h);
   width: auto;
   flex-shrink: 0;
   transform: translateY(12%);
@@ -95,24 +126,37 @@
 
 /* ---------------------------------------------------------- menu button */
 
+/**
+ * Outline, not the ink fill it used to be. The page is allowed exactly one
+ * filled button per screen and that one is orange, so every persistent control
+ * in the bar is a hairline — otherwise the eye has two things to land on above
+ * the fold and the orange one stops being the answer.
+ */
 .menu-button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 12px 4px 4px;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
   border-radius: 999px;
-  background-color: var(--ink);
-  color: var(--paper);
+  color: var(--ink);
+  background-color: var(--plate);
+  border: 0.5px solid var(--rule-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.menu-button:hover {
+  background-color: var(--paper);
+  border-color: var(--ink);
 }
 
 .menu-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: #ffffff;
   color: var(--ink);
   flex-shrink: 0;
 }
@@ -120,7 +164,7 @@
 .menu-label {
   font-size: 11px;
   font-weight: 500;
-  color: var(--paper);
+  color: var(--ink);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
@@ -133,13 +177,13 @@
   gap: 16px;
   padding: 9px 16px;
   border-radius: 999px;
-  background-color: #f4f4f6;
+  background-color: var(--rule);
 }
 
 .tags-pill-item {
   font-size: 11px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -149,7 +193,7 @@
   display: none;
   font-size: 12px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
   text-decoration: none;
   white-space: nowrap;
   transition: color 0.2s ease;
@@ -164,16 +208,22 @@
   align-items: center;
   padding: 10px 18px;
   border-radius: 999px;
-  background-color: var(--ink);
-  color: var(--paper);
+  color: var(--ink);
+  background-color: var(--plate);
+  border: 0.5px solid var(--rule-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
-  transition: opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .nav-cta:hover {
-  opacity: 0.85;
+  background-color: var(--paper);
+  border-color: var(--ink);
 }
 
 /* ------------------------------------------------------------- overlay menu */
@@ -187,8 +237,8 @@
   flex-direction: column;
   min-width: 232px;
   padding: 8px;
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
   border-radius: 16px;
 }
 
@@ -203,20 +253,19 @@
 }
 
 .nav-menu-item:hover {
-  background-color: var(--paper);
+  background-color: var(--rule);
 }
 
+/* outline here too — the orange button is never in a transient panel */
 .nav-menu-cta {
-  margin-top: 4px;
-  background-color: var(--ink);
-  color: var(--paper);
+  margin-top: 8px;
+  border: 0.5px solid var(--ink);
   font-weight: 500;
   text-align: center;
 }
 
 .nav-menu-cta:hover {
-  background-color: var(--ink);
-  opacity: 0.85;
+  background-color: var(--rule);
 }
 
 /* ------------------------------------------------- desktop — 768px and up */
@@ -224,6 +273,11 @@
 @media (min-width: 768px) {
   .navbar {
     padding: 24px 32px;
+    /* 34px is the floor at which "wning" is still legible: the lockup is
+       geometric, its x-height is 52% of the cap height and the descender adds
+       a quarter again, so the box reads far taller than the word does. Below
+       768px there is no room for that, and the mark goes out alone at 24px. */
+    --logo-h: 34px;
   }
 
   .nav-map-link,
@@ -237,10 +291,5 @@
 
   .tags-pill {
     display: flex;
-  }
-
-  .menu-icon {
-    width: 32px;
-    height: 32px;
   }
 }

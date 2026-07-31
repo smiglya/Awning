@@ -2,6 +2,7 @@ import { useRef, type ReactNode } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { scrollToId } from '../router'
 import { useChat } from './ChatWidget'
+import { IconArrow } from './icons'
 import { HERO } from '../data/copy'
 import { EASE } from './motion-presets'
 import './Hero.css'
@@ -104,14 +105,26 @@ export default function Hero() {
             <Line delay={0.87}>{HERO.line2}</Line>
           </h1>
 
+          <motion.p
+            className="hero-lede"
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.02, ease: EASE }}
+          >
+            {HERO.lede}
+          </motion.p>
+
           <motion.div
             className="cta-row"
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 1.15, ease: EASE }}
           >
+            {/* accent stays off: this arrow rides on --cta, where an orange
+                cell would vanish into the fill rather than mark anything */}
             <button className="btn btn-primary" type="button" onClick={openChat}>
               {HERO.primaryCta}
+              <IconArrow size={16} className="pill-icon" />
             </button>
             <button
               className="btn btn-secondary"

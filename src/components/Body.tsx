@@ -7,30 +7,31 @@ import { reveal, rise, stagger } from './motion-presets'
 import { EmptyState, ErrorState, WorkCardSkeleton } from './Skeleton'
 import { useProjects } from '../data/useProjects'
 import {
-  IconBrief,
-  IconBuild,
-  IconContent,
-  IconDraft,
-  IconGlobe,
-  IconLayout,
-  IconMotion,
-  IconNoLoop,
+  IconBolt,
+  IconGear,
+  IconGlass,
+  IconKey,
+  IconNib,
+  IconNoCalendar,
   IconPin,
-  IconRadar,
-  IconServer,
+  IconStar,
   IconTwoTongues,
+  IconWrench,
+  IconWriting,
+  type IconProps,
 } from './icons'
 import {
+  ADDONS,
+  COSTS,
+  FAQ,
   FINAL_CTA,
-  FULL_CYCLE,
-  HOW_IT_WORKS,
   MARQUEE,
   OWNER_SECTION,
   PORTFOLIO,
-  POSITIONING,
   PRICING,
+  PROCESS,
   PROOF,
-  SERVERS,
+  RISK,
   SHOWCASE,
   SPECS,
   TRUST_STRIP,
@@ -38,15 +39,16 @@ import {
 } from '../data/copy'
 import './Body.css'
 
-const WHY_ICONS = [IconRadar, IconNoLoop, IconDraft, IconTwoTongues]
-const STAGE_ICONS = [
-  IconBrief,
-  IconLayout,
-  IconMotion,
-  IconBuild,
-  IconContent,
-  IconServer,
-]
+const WHY_ICONS = [IconPin, IconNoCalendar, IconWriting, IconTwoTongues]
+
+/** Keyed by group, so reordering the price list cannot silently reshuffle icons. */
+const ADDON_ICONS: Record<string, (props: IconProps) => React.ReactElement> = {
+  design: IconNib,
+  features: IconGear,
+  found: IconGlass,
+  after: IconWrench,
+  speed: IconBolt,
+}
 
 /* ------------------------------------------------------------ 1. trust strip */
 
@@ -67,22 +69,26 @@ function TrustStrip() {
   )
 }
 
-/* ------------------------------------------------------------ 2. positioning */
+/* ---------------------------------------------------------------- 2. why us */
 
-function Positioning() {
+function WhyUs() {
   return (
     <section className="section">
       <div className="container">
-        <div className="grid">
-          <div className="col-9">
-            <motion.h2 className="h2" {...reveal(0, 26)}>
-              {POSITIONING.h2}
-            </motion.h2>
-            <motion.p className="lede" {...reveal(0.12, 20)}>
-              {POSITIONING.body}
-            </motion.p>
-          </div>
-        </div>
+        <motion.div className="card-grid" {...stagger(0.09)}>
+          {WHY_US.map((card, i) => {
+            const Icon = WHY_ICONS[i] ?? IconPin
+            return (
+              <motion.article className="card" key={card.title} {...rise(26)}>
+                <span className="card-icon">
+                  <Icon size={32} />
+                </span>
+                <h3 className="card-title">{card.title}</h3>
+                <p className="card-body">{card.body}</p>
+              </motion.article>
+            )
+          })}
+        </motion.div>
       </div>
     </section>
   )
@@ -126,44 +132,63 @@ function MotionShowcase() {
   )
 }
 
-/* ---------------------------------------------------------------- 4. why us */
+/* ---------------------------------------------------------------- 4. pricing */
 
-function WhyUs() {
+/**
+ * Pro carries the only filled button on the page's middle, and the only orange
+ * one among the three. The middle tier is what sells, and it sells because the
+ * dearest option is standing to the right of it — so Default and Pro+ get
+ * outline buttons and stay out of the way.
+ */
+function Pricing() {
+  const { open: openChat } = useChat()
+
   return (
-    <section className="section">
+    <section className="section" id="pricing">
       <div className="container">
-        <motion.div className="card-grid" {...stagger(0.09)}>
-          {WHY_US.map((card, i) => {
-            const Icon = WHY_ICONS[i] ?? IconRadar
-            return (
-              <motion.article className="card" key={card.title} {...rise(26)}>
-                <span className="card-icon">
-                  <Icon size={22} />
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {PRICING.h2}
+        </motion.h2>
+        <motion.p className="lede" {...reveal(0.1, 20)}>
+          {PRICING.sub}
+        </motion.p>
+
+        <motion.div className="tier-grid" {...stagger(0.1)}>
+          {PRICING.tiers.map((tier) => (
+            <motion.article
+              className={`tier${tier.featured ? ' tier-featured' : ''}`}
+              key={tier.name}
+              {...rise(30)}
+            >
+              {tier.flag && (
+                <span className="tier-flag">
+                  <IconStar size={16} accent />
+                  {tier.flag}
                 </span>
-                <h3 className="card-title">{card.title}</h3>
-                <p className="card-body">{card.body}</p>
-              </motion.article>
-            )
-          })}
-        </motion.div>
-      </div>
-    </section>
-  )
-}
+              )}
 
-/* ---------------------------------------------------------- 5. how it works */
+              <h3 className="tier-name">{tier.name}</h3>
+              <div className="tier-price">{tier.price}</div>
+              <p className="tier-for">{tier.forWho}</p>
 
-function HowItWorks() {
-  return (
-    <section className="section">
-      <div className="container">
-        <motion.div className="steps" {...stagger(0.12)}>
-          {HOW_IT_WORKS.map((step, i) => (
-            <motion.div className="step" key={step.title} {...rise(22)}>
-              <div className="step-n">{`0${i + 1}`}</div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-body">{step.body}</p>
-            </motion.div>
+              <ul className="tier-list">
+                {tier.includes.map((line) => (
+                  <li className="tier-item" key={line}>
+                    {line}
+                  </li>
+                ))}
+              </ul>
+
+              {tier.addLine && <p className="tier-add">{tier.addLine}</p>}
+
+              <button
+                className={`pill tier-cta ${tier.featured ? 'pill-cta' : 'pill-outline'}`}
+                type="button"
+                onClick={openChat}
+              >
+                {tier.cta}
+              </button>
+            </motion.article>
           ))}
         </motion.div>
       </div>
@@ -171,24 +196,158 @@ function HowItWorks() {
   )
 }
 
-/* ------------------------------------------------------------------ 6. proof */
+/* ---------------------------------------------------------------- 5. add-ons */
 
-function Proof() {
+/**
+ * The differentiator. A real table because it is tabular data — the owner is
+ * meant to add up their own quote from it before speaking to anybody, and a
+ * screen reader has to be able to say which number belongs to which line.
+ */
+function AddOns() {
   return (
-    <section className="section">
-      {/* No logo wall here on purpose: with no real client marks, five grey
-          placeholders in a hairline layout just read as broken images. */}
+    <section className="section" id="addons">
       <div className="container">
-        <motion.figure className="quote quote-solo" {...reveal(0, 24)}>
-          <blockquote className="quote-text">{PROOF.quote}</blockquote>
-          <figcaption className="quote-by">{PROOF.attribution}</figcaption>
-        </motion.figure>
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {ADDONS.h2}
+        </motion.h2>
+        <motion.p className="lede" {...reveal(0.1, 20)}>
+          {ADDONS.sub}
+        </motion.p>
+
+        <div className="addon-groups">
+          {ADDONS.groups.map((group) => {
+            const Icon = ADDON_ICONS[group.key] ?? IconGear
+            return (
+              <motion.div className="addon-group" key={group.key} {...reveal(0, 22)}>
+                <div className="addon-head">
+                  <span className="addon-icon">
+                    <Icon size={32} />
+                  </span>
+                  <h3 className="addon-title">{group.head}</h3>
+                </div>
+
+                <table className="addon-table">
+                  <caption className="sr-only">{group.head}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Service</th>
+                      <th scope="col" className="addon-num">
+                        {ADDONS.hoursLabel}
+                      </th>
+                      <th scope="col" className="addon-num">
+                        {ADDONS.priceLabel}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map((item) => (
+                      <tr key={item.name}>
+                        <th scope="row" className="addon-name">
+                          {item.name}
+                        </th>
+                        <td className="addon-num addon-hours">{item.hours ?? '—'}</td>
+                        <td className="addon-num addon-price">{item.price}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        <motion.p className="addon-note" {...reveal(0.06, 16)}>
+          {ADDONS.note}
+        </motion.p>
       </div>
     </section>
   )
 }
 
-/* -------------------------------------------------------------- 7. portfolio */
+/* ------------------------------------------------- 6. what it costs (dark) */
+
+function Costs() {
+  return (
+    <section className="section section-dark" id="why-this-price">
+      <div className="container">
+        <div className="grid">
+          <div className="col-9">
+            <motion.h2 className="h2 h2-dark" {...reveal(0, 26)}>
+              {COSTS.h2}
+            </motion.h2>
+            <motion.div className="cost-body" {...stagger(0.08)}>
+              {COSTS.paras.map((para) => (
+                <motion.p className="cost-para" key={para.slice(0, 32)} {...rise(18)}>
+                  {para}
+                </motion.p>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------- 7. risk */
+
+function Risk() {
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="grid">
+          <div className="col-9">
+            <motion.h2 className="h2" {...reveal(0, 26)}>
+              {RISK.h2}
+            </motion.h2>
+            <motion.p className="lede" {...reveal(0.12, 20)}>
+              {RISK.body}
+            </motion.p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ---------------------------------------------------------------- 8. process */
+
+/**
+ * The last step is the one the logo is about, so it gets the pixel key whose
+ * bit is the logotype's bit. That rhyme is the reason the icon set exists.
+ */
+function Process() {
+  const last = PROCESS.steps.length - 1
+
+  return (
+    <section className="section" id="process">
+      <div className="container">
+        <motion.h2 className="h2" {...reveal(0, 26)}>
+          {PROCESS.h2}
+        </motion.h2>
+
+        <motion.ol className="steps" {...stagger(0.09)}>
+          {PROCESS.steps.map((step, i) => (
+            <motion.li className="step" key={step.title} {...rise(22)}>
+              <div className="step-top">
+                <span className="step-n">{`0${i + 1}`}</span>
+                {i === last && (
+                  <span className="step-icon">
+                    <IconKey size={32} accent />
+                  </span>
+                )}
+              </div>
+              <h3 className="step-title">{step.title}</h3>
+              <p className="step-body">{step.body}</p>
+            </motion.li>
+          ))}
+        </motion.ol>
+      </div>
+    </section>
+  )
+}
+
+/* -------------------------------------------------------------- 9. portfolio */
 
 const PORTFOLIO_COUNT = 6
 
@@ -236,7 +395,7 @@ function Portfolio() {
                     <span className="work-price">{item.price}</span>
                   </div>
                   <p className="work-meta">
-                    <IconPin size={13} className="work-pin" />
+                    <IconPin size={16} className="work-pin" />
                     {item.neighbourhood}, {item.borough} · {item.category} · {item.days}
                   </p>
                   <p className="work-blurb">{item.blurb}</p>
@@ -247,7 +406,7 @@ function Portfolio() {
         )}
 
         <motion.div className="work-cta" {...reveal(0.08, 16)}>
-          <button className="pill pill-fill" type="button" onClick={openChat}>
+          <button className="pill pill-outline" type="button" onClick={openChat}>
             {PORTFOLIO.cta}
           </button>
           <Link className="pill pill-outline" to="/work-map">
@@ -259,156 +418,18 @@ function Portfolio() {
   )
 }
 
-/* ---------------------------------------------------------------- 8. pricing */
+/* ----------------------------------------------------------------- 10. proof */
 
-function Pricing() {
-  const { open: openChat } = useChat()
-
+function Proof() {
   return (
-    <section className="section" id="pricing">
+    <section className="section">
+      {/* No logo wall here on purpose: with no real client marks, five grey
+          placeholders in a hairline layout just read as broken images. */}
       <div className="container">
-        <motion.h2 className="h2" {...reveal(0, 26)}>
-          {PRICING.h2}
-        </motion.h2>
-        <motion.p className="lede" {...reveal(0.1, 20)}>
-          {PRICING.sub}
-        </motion.p>
-
-        <motion.div className="tier-grid" {...stagger(0.1)}>
-          {PRICING.tiers.map((tier) => (
-            <motion.article
-              className={`tier${tier.featured ? ' tier-featured' : ''}`}
-              key={tier.name}
-              {...rise(30)}
-            >
-              {tier.featured && <span className="tier-flag">Most taken</span>}
-
-              <h3 className="tier-name">{tier.name}</h3>
-              <div className="tier-price">{tier.price}</div>
-              <p className="tier-for">{tier.forWho}</p>
-
-              <ul className="tier-list">
-                {tier.includes.map((line) => (
-                  <li className="tier-item" key={line}>
-                    {line}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                className={`pill tier-cta ${
-                  tier.featured ? 'pill-fill' : 'pill-outline'
-                }`}
-                type="button"
-                onClick={openChat}
-              >
-                {tier.cta}
-              </button>
-            </motion.article>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-/* ------------------------------------------------------------- 9. full cycle */
-
-function FullCycle() {
-  const { open: openChat } = useChat()
-
-  return (
-    <section className="section" id="cycle">
-      <div className="container">
-        <motion.h2 className="h2" {...reveal(0, 26)}>
-          {FULL_CYCLE.h2}
-        </motion.h2>
-        <motion.p className="lede" {...reveal(0.1, 20)}>
-          {FULL_CYCLE.sub}
-        </motion.p>
-
-        <motion.ol className="cycle" {...stagger(0.09)}>
-          {FULL_CYCLE.stages.map((stage, i) => {
-            const Icon = STAGE_ICONS[i] ?? IconBrief
-            return (
-              <motion.li className="cycle-row" key={stage.title} {...rise(22)}>
-                <span className="cycle-index">{`0${i + 1}`}</span>
-                <span className="cycle-icon">
-                  <Icon size={20} />
-                </span>
-                <div className="cycle-text">
-                  <h3 className="cycle-title">{stage.title}</h3>
-                  <p className="cycle-body">{stage.body}</p>
-                </div>
-                <span className="cycle-owned">{stage.owned}</span>
-              </motion.li>
-            )
-          })}
-        </motion.ol>
-
-        <motion.div className="cycle-foot" {...reveal(0.06, 16)}>
-          <button className="pill pill-outline" type="button" onClick={openChat}>
-            {FULL_CYCLE.cta}
-          </button>
-          <p className="cycle-note">{FULL_CYCLE.note}</p>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-/* ------------------------------------------------- 10. servers (dark band) */
-
-function Servers() {
-  const { open: openChat } = useChat()
-
-  return (
-    <section className="section section-dark" id="servers">
-      <div className="container">
-        <div className="grid servers-grid">
-          <div className="col-6">
-            <motion.h2 className="h2 h2-dark" {...reveal(0, 26)}>
-              {SERVERS.h2}
-            </motion.h2>
-            <motion.p className="lede lede-dark" {...reveal(0.1, 20)}>
-              {SERVERS.sub}
-            </motion.p>
-
-            <motion.div className="server-facts" {...stagger(0.07)}>
-              {SERVERS.facts.map((fact) => (
-                <motion.div className="server-fact" key={fact.label} {...rise(14)}>
-                  <dt>{fact.label}</dt>
-                  <dd>{fact.value}</dd>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            <motion.div {...reveal(0.1, 16)}>
-              <button
-                className="pill pill-invert servers-cta"
-                type="button"
-                onClick={openChat}
-              >
-                {SERVERS.cta}
-              </button>
-            </motion.div>
-          </div>
-
-          <motion.div className="col-5 col-start-8" {...stagger(0.12)}>
-            {SERVERS.locations.map((loc, i) => (
-              <motion.article className="server-card" key={loc.label} {...rise(26)}>
-                <span className="server-card-mark">
-                  {i === 0 ? <IconPin size={20} /> : <IconGlobe size={20} />}
-                </span>
-                <div className="server-card-head">
-                  <h3 className="server-card-title">{loc.label}</h3>
-                  <span className="server-card-region">{loc.region}</span>
-                </div>
-                <p className="server-card-blurb">{loc.blurb}</p>
-              </motion.article>
-            ))}
-          </motion.div>
-        </div>
+        <motion.figure className="quote quote-solo" {...reveal(0, 24)}>
+          <blockquote className="quote-text">{PROOF.quote}</blockquote>
+          <figcaption className="quote-by">{PROOF.attribution}</figcaption>
+        </motion.figure>
       </div>
     </section>
   )
@@ -436,7 +457,29 @@ function Specs() {
   )
 }
 
-/* --------------------------------------------------------------- 12. owner */
+/* ------------------------------------------------------------------- 12. faq */
+
+function Faq() {
+  return (
+    <section className="section" id="faq">
+      <div className="container">
+        <motion.h2 className="h2 specs-heading" {...reveal(0, 26)}>
+          {FAQ.h2}
+        </motion.h2>
+        <motion.div className="faq" {...stagger(0.05)}>
+          {FAQ.items.map((item) => (
+            <motion.div className="faq-row" key={item.q} {...rise(16, 0.6)}>
+              <h3 className="faq-q">{item.q}</h3>
+              <p className="faq-a">{item.a}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+/* --------------------------------------------------------------- 13. owner */
 
 function OwnerSection() {
   const { open: openChat } = useChat()
@@ -473,7 +516,7 @@ function OwnerSection() {
   )
 }
 
-/* ------------------------------------------------------------ 13. final cta */
+/* ------------------------------------------------------------ 14. final cta */
 
 function FinalCta() {
   const { open: openChat } = useChat()
@@ -491,7 +534,7 @@ function FinalCta() {
           {FINAL_CTA.sub}
         </motion.p>
         <motion.div className="cta-pills" {...reveal(0.18, 16)}>
-          <button className="pill pill-fill" type="button" onClick={openChat}>
+          <button className="pill pill-cta" type="button" onClick={openChat}>
             {FINAL_CTA.primary}
           </button>
           <Link className="pill pill-outline" to="/work-map">
@@ -510,16 +553,17 @@ export default function Body() {
     <main className="body">
       <Marquee items={MARQUEE} />
       <TrustStrip />
-      <Positioning />
-      <MotionShowcase />
       <WhyUs />
-      <HowItWorks />
-      <Proof />
-      <Portfolio />
+      <MotionShowcase />
       <Pricing />
-      <FullCycle />
-      <Servers />
+      <AddOns />
+      <Costs />
+      <Risk />
+      <Process />
+      <Portfolio />
+      <Proof />
       <Specs />
+      <Faq />
       <OwnerSection />
       <FinalCta />
     </main>

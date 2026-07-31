@@ -6,7 +6,7 @@
   height: 150px;
   border-radius: 12px;
   background-color: var(--paper);
-  border: 0.5px solid var(--grey-3);
+  border: 0.5px solid var(--rule);
   overflow: hidden;
   color: var(--ink);
   /* technical ground: a faint engineering grid under every demo */

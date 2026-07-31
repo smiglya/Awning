@@ -14,7 +14,7 @@
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.06em;
-  color: var(--grey-2);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -32,7 +32,7 @@
   font-size: 16px;
   font-weight: 400;
   line-height: 1.55;
-  color: var(--grey-1);
+  color: var(--text);
   max-width: 48ch;
 }
 

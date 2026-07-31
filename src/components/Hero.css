@@ -62,7 +62,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
 }
 
 .subtitle-dot {
@@ -109,11 +109,11 @@
   background-color: rgba(250, 250, 249, 0.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 0.5px solid var(--grey-3);
+  border: 0.5px solid var(--rule);
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.01em;
-  color: var(--grey-1);
+  color: var(--text);
   max-width: calc(100% - var(--side-margin) * 2);
 }
 
@@ -166,23 +166,44 @@
     background-color 0.25s ease;
 }
 
+/**
+ * The first of the six orange places, and the loudest. Ink type on it, never
+ * white: white lands at 3.56 against this orange and fails AA, ink at 5.56 and
+ * passes. The arrow beside it renders in currentColor for the same reason —
+ * an orange cell on an orange fill is a hole, not a highlight.
+ */
 .btn-primary {
-  background-color: var(--ink);
-  color: var(--paper);
+  background-color: var(--cta);
+  color: var(--ink);
 }
 
 .btn-primary:hover {
-  opacity: 0.85;
+  background-color: var(--cta-hover);
 }
 
 .btn-secondary {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--plate);
   color: var(--ink);
-  border: 0.5px solid rgba(10, 10, 10, 0.35);
+  border: 0.5px solid var(--rule-strong);
+  backdrop-filter: blur(8px);
 }
 
 .btn-secondary:hover {
-  background-color: #ffffff;
+  background-color: var(--paper);
+}
+
+/* The §10.1 paragraph, sitting on the video, so it needs its own plate. */
+.hero-lede {
+  margin: 20px 0 0;
+  max-width: 46ch;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background-color: var(--plate);
+  backdrop-filter: blur(8px);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
 }
 
 .hero-foot-right {
@@ -197,11 +218,11 @@
   align-items: center;
   padding: 9px 16px;
   border-radius: 999px;
-  background-color: #ffffff;
-  border: 0.5px solid var(--grey-3);
+  background-color: var(--paper);
+  border: 0.5px solid var(--rule);
   font-size: 11px;
   font-weight: 400;
-  color: var(--grey-1);
+  color: var(--text);
   white-space: nowrap;
 }
 
