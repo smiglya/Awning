@@ -153,10 +153,51 @@ describe('colour', () => {
     expect(rules).toEqual([
       'src/index.css: .on-ink :focus-visible, .section-dark :focus-visible',
       'src/index.css: ::highlight(awning-grey)',
+      'src/index.css: .pill, .btn, .nav-cta, .nav-menu-cta, .menu-label,' +
+        ' .chat-launcher, .chat-submit, .chat-email-btn',
     ])
 
     // and in the drawings, only as a fill on a group of cells
     expect(read('src/components/icons.tsx')).toContain('<g fill="var(--accent)">')
+  })
+
+  it('gives every button both the weight and the rim', () => {
+    /**
+     * The two treatments belong to the same set, and the set is spelled out in
+     * one place for that reason. A button added to the stroke rule but left at
+     * 500 — or bolded in its own sheet and never added here — is exactly the
+     * drift the single rule exists to prevent, and neither half looks wrong on
+     * its own.
+     */
+    // comments stripped first: the block above the rule is part of the run
+    // between the previous brace and this one, and it would swallow .pill
+    const css = STYLE_FILES.map((file) => read(file))
+      .join('\n')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const stroke = css.match(/([^{}]+)\{[^}]*-webkit-text-stroke[^}]*\}/)?.[1] ?? ''
+    const selectors = stroke
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.startsWith('.'))
+
+    expect(selectors.length).toBeGreaterThanOrEqual(8)
+
+    // Matched on the whole selector list rather than by substring: ".pill"
+    // appears inside ".boundary-page .pill", and a loose match finds that
+    // rule's margin instead of the button's weight.
+    const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => ({
+      selectors: (m[1] ?? '').split(',').map((s) => s.trim()),
+      body: m[2] ?? '',
+    }))
+
+    for (const selector of selectors) {
+      const own = rules.filter((rule) => rule.selectors.includes(selector))
+      expect(own.length, `${selector} has no rule of its own`).toBeGreaterThan(0)
+      expect(
+        own.some((rule) => rule.body.includes('font-weight: 600')),
+        `${selector} is not bold`
+      ).toBe(true)
+    }
   })
 
   it('splits the letter hover by how dark the type already is', () => {

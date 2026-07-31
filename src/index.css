@@ -295,6 +295,38 @@ input {
 }
 
 /**
+ * Every button label carries a thin --accent rim.
+ *
+ * One rule for the whole button set rather than a line in each component sheet.
+ * These same selectors are the ones that carry weight 600, and two treatments
+ * that belong to the same set drift apart the moment they live in eight files.
+ *
+ * paint-order puts the stroke behind the fill, so the rim grows outward and the
+ * letterform keeps its full mass. Without it -webkit-text-stroke centres on the
+ * outline and eats half its width out of the glyph, which at 14px is the
+ * difference between a rim and a thinner, muddier typeface. Where paint-order
+ * is not honoured the stroke is 0.5px centred, which is still only a quarter of
+ * a pixel taken off each edge.
+ *
+ * One place this is decoration rather than an outline, and it is worth writing
+ * down: on .pill-cta the rim is --accent over --cta, which measures 1.29:1. It
+ * cannot be seen. What it does do is lighten the edge of ink type that has
+ * 5.13:1 to work with, so if the buttons ever start reading soft, this rule is
+ * the first place to look.
+ */
+.pill,
+.btn,
+.nav-cta,
+.nav-menu-cta,
+.menu-label,
+.chat-launcher,
+.chat-submit,
+.chat-email-btn {
+  -webkit-text-stroke: 1px var(--accent);
+  paint-order: stroke fill;
+}
+
+/**
  * The conversion button, and the only filled button the page is allowed.
  *
  * Text is --ink rather than white on purpose: white on this orange measures
