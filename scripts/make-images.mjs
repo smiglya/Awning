@@ -294,7 +294,7 @@ function drawOgImage() {
     shapesOf(maskPaths(source, 0)),
     shapesOf(maskPaths(source, 1)),
     box,
-    mix(hex('#D9D9D9'), hex('#FF3E04'), 0.9),
+    mix(hex('#D9D9D9'), hex('#F84608'), 0.9),
     frame,
     0.7
   )

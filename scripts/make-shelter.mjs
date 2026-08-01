@@ -3,69 +3,75 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Draws the shelter marks, and the campfire on its own.
+ * Draws the shelter, and the campfire on its own.
  *
  *   node scripts/make-shelter.mjs
  *
- * Three prototypes, and they are three answers to the same two problems rather
- * than three moods. The concept needs nine colours the site does not declare,
- * and at the 24 pixels the navigation sets a mark at, a campfire inside a tent
- * is two orange dots.
+ * Every colour here comes from one of the two supplied palettes and nowhere
+ * else. That is now the brand rule rather than a preference for this drawing,
+ * which is why the three earlier prototypes collapsed back into one: Ember
+ * existed only to avoid spending colours the site had not declared, and the
+ * fire palette is declared now, so the constraint it was answering is gone.
  *
- *   logo-new.svg        Camp. The concept as drawn — flag, ground, the full
- *                       fire with its logs and embers. Large use only.
+ *   logo-new.svg   The shelter, with the supplied fire burning inside it.
+ *   campfire.svg   That fire on its own, at the size it was drawn.
  *
- *   logo-new-ember.svg  The working mark. Square, cropped tight, no flag and no
- *                       ground, and a flame built only from --paper and the
- *                       three oranges the palette already owns. Adds nothing to
- *                       the palette and loses nothing at 24px.
- *
- *   logo-new-poles.svg  The open frame. A shelter is poles rather than walls,
- *                       and with the tie set where an A puts its crossbar the
- *                       mark reads as a tent, a fire and the letter at once.
- *
- * Nothing on the site renders any of them yet: choosing a mark is a decision,
- * not a side effect of drawing three.
+ * Nothing on the site renders either yet. Replacing the mark is a decision, and
+ * the reference lockups under brand/ are still the ones in use.
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-const C = {
-  ink: '#0A0A0A',
-  paper: '#FAFAF9',
-  hover: '#FF3E04',
-  accent: '#FF6131',
-  ember: '#FF3C00',
-  d: '#A32218',
-  r: '#E63A22',
-  o: '#FF7A18',
-  a: '#FFB13B',
-  y: '#FFE08A',
-  w: '#F4FBF6',
-  l: '#E0BC8C',
-  m: '#A9784E',
-  k: '#5E3B22',
-  spark: '#5A5A5A',
+/** brand/fire-palitra.svg, hottest to coolest. */
+const F = {
+  Y: '#F7F804',
+  G: '#F9CF01',
+  O: '#F96607',
+  A: '#F84608',
+  R: '#F70008',
 }
+
+/** brand/wood-palitra.svg. */
+const WOOD = {
+  n: '#785748',
+  g: '#4C4240',
+  b: '#83443D',
+  s: '#40403E',
+  p: '#B45950',
+  u: '#5B333E',
+  k: '#502732',
+}
+
+/** The darkest wood is the mark's ink, and it is 12.52 against white. */
+const INK = WOOD.k
 
 /**
- * Two ramps: the reference's, and one built only from colours the site owns.
+ * brand/fire.svg, cell for cell.
  *
- * The second is the whole argument for the Ember prototype. --paper is the site
- * already declares a near-white, and the three oranges are already spent on
- * conversion, so a flame made of those four costs the palette nothing. The
- * reference's ramp is richer and needs nine values the design system would have
- * to be rewritten to allow.
+ * Eight by fourteen, transcribed rather than redrawn — the supplied flame is
+ * the reference, and a flame generated to look like it would drift the moment
+ * either file changed. The gap at the bottom centre is in the original and is
+ * not an omission: the flame arches over the spot the logs occupy.
  */
-const RICH = [C.w, C.y, C.a, C.o, C.r, C.d]
-const PALETTE = [C.paper, C.accent, C.hover, C.ember]
+const FIRE = [
+  '..A.....',
+  '..RR....',
+  '...AR.A.',
+  '...RA...',
+  'R..RARR.',
+  '..RROOR.',
+  '..RAOOR.',
+  '.RAOOORR',
+  '.RAOOOOR',
+  '.ROGGGOR',
+  'ROOGGGOR',
+  'ROYG.YOR',
+  'RRY..YR.',
+  '.RR..R..',
+]
 
-/** Deterministic: the same drawing every run, so a diff means a change. */
-function hash(a, b) {
-  let n = a * 374761393 + b * 668265263
-  n = (n ^ (n >>> 13)) * 1274126177
-  return ((n ^ (n >>> 16)) >>> 0) / 4294967296
-}
+/** Logs: lit face, turned face, cut end. */
+const LOGS = ['bnnpnnb.bnnpnnb', 'kbbnbbk.kbbnbbk', '.kbbbk...kbbbk.']
 
 const canvas = (w, h) => ({
   w,
@@ -74,245 +80,117 @@ const canvas = (w, h) => ({
   set(x, y, c) {
     if (x >= 0 && x < this.w && y >= 0 && y < this.h) this.cells[y][x] = c
   },
-  at(x, y) {
-    return this.cells[y]?.[x] ?? null
-  },
 })
 
-/**
- * The flame, built as heat rather than traced as an outline.
- *
- * The reference is concentric — a white heart, then yellow, amber, orange, red
- * and a dark rim — so the drawing is a heat field falling away from a point
- * under the base, cut into bands. Tracing bands by hand gives a flame whose
- * colours do not nest, and that reads as a mistake even when nobody can say
- * which pixel is wrong.
- *
- * `spread` is how hard the field is cut. A four-stop ramp needs a tighter cut
- * than a six-stop one or the heart swallows the flame — which is exactly what
- * the palette version did on its first pass.
- */
-function drawFire(
-  c,
-  ox,
-  oy,
-  { fw, fh, bands, logs = true, sparks = true, rim = true, spread = 1.02 }
-) {
-  const cx = (fw - 1) / 2
-  const base = fh - 0.5
-
-  for (let y = 0; y < fh; y += 1) {
-    const up = (base - y) / base
-    let half = (fw / 2.6) * Math.sin(Math.PI * Math.min(1, up * 0.86 + 0.14)) ** 0.75
-    half *= 0.82 + hash(y, 3) * 0.36
-    if (up > 0.72) half *= 1 - (up - 0.72) * 1.6
-
-    for (let x = 0; x < fw; x += 1) {
-      const dx = Math.abs(x + 0.5 - cx - 0.5)
-      if (dx > half) continue
-      const heat = (1 - dx / Math.max(0.8, half)) * 0.68 + (1 - up) * 0.62
-      const wobble = hash(x * 7, y * 13) * 0.1
-      const band = Math.min(
-        bands.length - 1,
-        Math.max(0, Math.floor((1 - heat + wobble) * bands.length * spread))
-      )
-      c.set(ox + x, oy + y, bands[band])
-    }
-  }
-
-  /**
-   * The dark rim, applied by neighbour rather than by radius. A radius follows
-   * the maths; the rim has to follow the silhouette, and the silhouette is the
-   * ragged part.
-   */
-  if (rim) {
-    const lit = new Set(bands.slice(0, -1))
-    const edge = []
-    for (let y = 0; y < fh; y += 1) {
-      for (let x = 0; x < fw; x += 1) {
-        if (!lit.has(c.at(ox + x, oy + y))) continue
-        const bare = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ].some(([dx, dy]) => !c.at(ox + x + dx, oy + y + dy))
-        if (bare) edge.push([ox + x, oy + y])
+/** Draws a bitmap at `scale`, so the supplied 8x14 can fill a 16x28 opening. */
+function stamp(c, rows, ox, oy, map, scale = 1) {
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x += 1) {
+      const shade = map[row[x]]
+      if (!shade) continue
+      for (let dy = 0; dy < scale; dy += 1) {
+        for (let dx = 0; dx < scale; dx += 1) {
+          c.set(ox + x * scale + dx, oy + y * scale + dy, shade)
+        }
       }
     }
-    for (const [x, y] of edge) c.set(x, y, bands[bands.length - 1])
-  }
-
-  /* embers, which is what stops a flame looking cut out of paper */
-  if (sparks) {
-    const shades = bands.length > 4 ? [C.d, C.r, C.o] : [C.ember, C.hover, C.accent]
-    const spots = [
-      [Math.round(fw * 0.2), 3],
-      [Math.round(fw * 0.85), 2],
-      [Math.round(fw * 0.1), 7],
-      [Math.round(fw * 0.95), 8],
-      [Math.round(fw * 0.05), 12],
-    ]
-    spots.forEach(([x, y], i) => c.set(ox + x, oy + y, shades[i % shades.length]))
-  }
-
-  if (logs) {
-    const rows = ['kmmlmmk.kmmlmmk.kmlk', 'kllmllk.kllmllk.klmk', '.kmmmk...kmmmk..kmk.']
-    const scale = fw / 20
-    rows.forEach((row, i) => {
-      for (let x = 0; x < row.length; x += 1) {
-        const ch = row[x]
-        if (ch === '.') continue
-        c.set(
-          ox + Math.round(x * scale),
-          oy + fh + i,
-          ch === 'k' ? C.k : ch === 'm' ? C.m : C.l
-        )
-      }
-    })
-  }
+  })
 }
 
+/* ---------------------------------------------------------------- shelter */
+
+const W = 100
+const H = 100
+const CX = 50
+const APEX = 14
+const FOOT = 90
+const SPAN = FOOT - APEX
+
 /**
- * The A-frame: two walls, with the entrance flaps folded back inside.
+ * The shelter is one solid mass with a narrow slit cut through it, not four
+ * diagonal lines.
  *
- * `flap` at zero leaves a plain silhouette, which is what the small mark wants
- * — the fold is a detail that turns to noise below about forty pixels.
+ * The first pass made the flap three pixels wide and the whole drawing came out
+ * as an A built from strokes — the walls have to carry real weight before the
+ * slit reads as a fold rather than as an outline. Wall eighteen, flap fourteen,
+ * two of daylight between them.
+ *
+ * Both edges curve. The flaps hug the pole near the apex and swing out low
+ * down, which is what makes the entrance a lens rather than a triangle.
  */
-function drawFrame(c, { cx, apex, foot, outer, wall, flap }) {
-  for (let y = apex; y <= foot; y += 1) {
-    const t = (y - apex) / (foot - apex)
-    const o = Math.round(cx - outer * t)
-    const wallIn = o + Math.max(1, Math.round(wall * t))
-    const flapW = flap ? Math.max(1, Math.round(flap * t)) : 0
+const outerAt = (t) => CX - 48 * t
+const wallAt = (t) => CX - 30 * t ** 0.85
+const flapWidthAt = (t) => 14 * t ** 1.05
+
+/** The opening never closes below this, or the fire has nowhere to sit. */
+const OPENING = 11
+
+function shelter() {
+  const c = canvas(W, H)
+
+  for (let y = APEX; y <= FOOT; y += 1) {
+    const t = (y - APEX) / SPAN
+    const outer = Math.round(outerAt(t))
+    const wallIn = Math.round(wallAt(t))
+    const flapEnd = Math.min(wallIn + 2 + Math.round(flapWidthAt(t)), CX - OPENING)
 
     for (const side of [-1, 1]) {
-      const flip = (x) => (side < 0 ? x : c.w - 1 - x)
-      for (let x = o; x < wallIn; x += 1) c.set(flip(x), y, C.ink)
-      if (!flapW) continue
-
-      /**
-       * Two pixels of daylight, then the flap. Two rather than one: a
-       * single-pixel seam on a diagonal is a staircase that keeps closing up
-       * under rounding, and what renders is a dotted line that reads as a fault
-       * rather than as a fold.
-       *
-       * Clamped short of the centre, or near the apex the two sides cross and
-       * draw an X through the top of the tent.
-       */
-      const end = Math.min(wallIn + 2 + flapW, cx - 1)
-      for (let x = wallIn + 2; x < end; x += 1) c.set(flip(x), y, C.ink)
+      const flip = (x) => (side < 0 ? x : W - 1 - x)
+      for (let x = outer; x < wallIn; x += 1) c.set(flip(x), y, INK)
+      // two pixels of daylight, then the flap folded back inside
+      for (let x = wallIn + 2; x < flapEnd; x += 1) c.set(flip(x), y, INK)
     }
   }
-}
 
-/* ------------------------------------------------------ 1. Camp, the scene */
-
-function camp() {
-  const c = canvas(80, 84)
-  const CX = 40
-  const FOOT = 76
-  drawFrame(c, { cx: CX, apex: 16, foot: FOOT, outer: 38, wall: 20, flap: 8 })
-
-  for (let i = 0; i < 4; i += 1) {
-    for (let x = 0; x < 7; x += 1) {
-      c.set(2 + x, FOOT - i, C.ink)
-      c.set(c.w - 3 - x, FOOT - i, C.ink)
+  /* feet: pads under each wall, and no ground line — the reference stands on
+     its own rather than sitting on a bar */
+  for (let i = 0; i < 3; i += 1) {
+    for (let x = 0; x < 11; x += 1) {
+      c.set(1 + x, FOOT + 1 - i, INK)
+      c.set(W - 2 - x, FOOT + 1 - i, INK)
     }
   }
-  for (let y = FOOT + 1; y <= FOOT + 4; y += 1) {
-    for (let x = 0; x < c.w; x += 1) c.set(x, y, C.ink)
+
+  /* the pole rises straight out of the apex, and the pennant flies right with
+     a notch cut into its edge */
+  for (let y = 2; y <= APEX + 2; y += 1) {
+    c.set(CX - 1, y, INK)
+    c.set(CX, y, INK)
   }
+  stamp(
+    c,
+    [
+      'mmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmm.',
+      'mmmmmmmmmmmm..',
+      'mmmmmmmmmmmmm.',
+      'mmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmm',
+    ],
+    CX + 1,
+    2,
+    { m: INK }
+  )
 
-  for (let y = 6; y <= 18; y += 1) {
-    c.set(CX, y, C.ink)
-    c.set(CX - 1, y, C.ink)
-  }
-  const flag = [
-    'mmmmmmmmmmmmm',
-    'mmmmmmmmmmmmm',
-    '.mmmmmmmmmmmm',
-    '..mmmmmmmmmmm',
-    '.mmmmmmmmmmmm',
-    'mmmmmmmmmmmmm',
-    'mmmmmmmmmmmmm',
-  ]
-  flag.forEach((row, i) => {
-    for (let x = 0; x < row.length; x += 1) {
-      if (row[x] === 'm') c.set(CX - 13 + x, 6 + i, C.ink)
-    }
-  })
+  /* the glint, in the wood palette's dusty rose rather than a grey */
+  stamp(c, ['..m..', '.mmm.', 'mmmmm', '.mmm.', '..m..'], 15, 72, { m: WOOD.p })
 
-  const star = ['..m..', '.mmm.', 'mmmmm', '.mmm.', '..m..']
-  star.forEach((row, i) => {
-    for (let x = 0; x < row.length; x += 1) {
-      if (row[x] === 'm') c.set(11 + x, 58 + i, C.spark)
-    }
-  })
+  /* the fire, doubled so the supplied eight-by-fourteen carries at this size.
+     Drawn last, so it sits in the opening rather than behind the flaps. */
+  const scale = 2
+  const fx = CX - (8 * scale) / 2
+  const fy = FOOT - 14 * scale + 1
+  stamp(c, FIRE, fx, fy, F, scale)
+  stamp(c, LOGS, fx, FOOT - 2, WOOD, 1)
 
-  drawFire(c, CX - 10, FOOT - 26, { fw: 20, fh: 21, bands: RICH })
   return c
 }
-
-/* -------------------------------------------- 2. Ember, the working mark */
-
-function ember() {
-  const c = canvas(48, 48)
-  const CX = 24
-  drawFrame(c, { cx: CX, apex: 3, foot: 44, outer: 23, wall: 13, flap: 0 })
-  for (let y = 45; y <= 47; y += 1) {
-    for (let x = 0; x < c.w; x += 1) c.set(x, y, C.ink)
-  }
-  drawFire(c, CX - 7, 30, {
-    fw: 14,
-    fh: 14,
-    bands: PALETTE,
-    logs: false,
-    sparks: false,
-    spread: 1.5,
-  })
-  return c
-}
-
-/* ------------------------------------------ 3. Poles, the open structure */
-
-function poles() {
-  const c = canvas(72, 76)
-  const CX = 36
-  const APEX = 14
-  const FOOT = 68
-  const TH = 4
-
-  /* the poles run past their crossing, the way lashed poles do */
-  for (let y = 4; y <= FOOT; y += 1) {
-    const t = (y - APEX) / (FOOT - APEX)
-    const lean = Math.round(30 * t)
-    for (let i = 0; i < TH; i += 1) {
-      c.set(CX - lean - i, y, C.ink)
-      c.set(CX + lean + i - (TH - 1), y, C.ink)
-    }
-  }
-
-  /* the tie, set where an A puts its crossbar — which is what makes this one
-     a letter as well as a shelter */
-  for (let y = 41; y < 45; y += 1) {
-    const t = (y - APEX) / (FOOT - APEX)
-    const lean = Math.round(30 * t)
-    for (let x = CX - lean; x <= CX + lean; x += 1) c.set(x, y, C.ink)
-  }
-  for (let y = FOOT + 1; y <= FOOT + 3; y += 1) {
-    for (let x = 0; x < c.w; x += 1) c.set(x, y, C.ink)
-  }
-
-  drawFire(c, CX - 9, FOOT - 24, { fw: 18, fh: 20, bands: RICH })
-  return c
-}
-
-/* -------------------------------------------------- the fire on its own */
 
 function fireOnly() {
-  const c = canvas(20, 26)
-  drawFire(c, 0, 0, { fw: 20, fh: 21, bands: RICH })
+  const c = canvas(15, 17)
+  stamp(c, FIRE, 3, 0, F)
+  stamp(c, LOGS, 0, 14, WOOD)
   return c
 }
 
@@ -323,7 +201,7 @@ function fireOnly() {
  * by width and height: one fill attribute per colour instead of per rectangle,
  * and two-digit coordinates instead of four.
  */
-function toSvg(c, module = 16) {
+function toSvg(c, module = 8) {
   const runs = []
   for (let y = 0; y < c.h; y += 1) {
     let x = 0
@@ -357,9 +235,10 @@ function toSvg(c, module = 16) {
     svg: (note) => `<!-- ${note}
 
      GENERATED by scripts/make-shelter.mjs — run that, do not edit this.
-     ${c.w} x ${c.h} pixels. The viewBox is the pixel grid and the module rides
-     on width and height, so one pixel lands on ${module} units at the natural
-     size. crispEdges keeps a browser from smoothing the grid into mush. -->
+     ${c.w} x ${c.h} pixels, in the two supplied palettes and nothing else. The
+     viewBox is the pixel grid and the module rides on width and height, so one
+     pixel lands on ${module} units at the natural size. crispEdges keeps a
+     browser from smoothing the grid into mush. -->
 <svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 ${c.w} ${c.h}"
@@ -374,14 +253,16 @@ ${body}
 }
 
 const OUT = [
-  ['logo-new.svg', camp(), 'Camp: the concept as drawn, for large use.'],
-  ['logo-new-ember.svg', ember(), 'The working mark, in palette colours only.'],
-  ['logo-new-poles.svg', poles(), 'The open frame, which also reads as an A.'],
-  ['campfire.svg', fireOnly(), 'The campfire that burns inside the shelter.'],
+  ['logo-new.svg', shelter(), 'The shelter, with the supplied fire burning inside it.'],
+  [
+    'campfire.svg',
+    fireOnly(),
+    'brand/fire.svg over its logs, transcribed cell for cell.',
+  ],
 ]
 
 for (const [name, c, note] of OUT) {
   const out = toSvg(c)
   writeFileSync(join(root, 'brand', name), out.svg(note))
-  console.log(`brand/${name.padEnd(20)} ${c.w} x ${c.h} px, ${out.runs} rects`)
+  console.log(`brand/${name.padEnd(16)} ${c.w} x ${c.h} px, ${out.runs} rects`)
 }

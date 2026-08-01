@@ -11,8 +11,8 @@
   color: var(--ink);
   /* technical ground: a faint engineering grid under every demo */
   background-image:
-    linear-gradient(to right, rgba(10, 10, 10, 0.045) 0.5px, transparent 0.5px),
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.045) 0.5px, transparent 0.5px);
+    linear-gradient(to right, rgba(80, 39, 50, 0.045) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, rgba(80, 39, 50, 0.045) 0.5px, transparent 0.5px);
   background-size: 22px 22px;
 }
 

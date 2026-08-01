@@ -19,25 +19,29 @@ const root = resolve(__dirname, '..')
 const read = (path: string) => readFileSync(join(root, path), 'utf8')
 
 /**
- * Eight, and the site may not contain a ninth.
+ * Ten, and the site may not contain an eleventh.
  *
- * The brief specifies seven. --ember #FF3C00 is the eighth, added on request
- * for the pixel flame — it was --cta itself until the conversion colour moved
- * to #E54E20, so the fire burns in the three oranges the brand was drawn from.
+ * White, four from brand/wood-palitra.svg and five from brand/fire-palitra.svg.
+ * Nothing here is mixed, tinted or nudged — this list is a transcription of two
+ * supplied files, and the point of the test is that it stays one. The three
+ * woods the interface does not use (#B45950, #5B333E, #40403E) are absent on
+ * purpose: they are available to artwork and are not tokens.
  */
 const PALETTE = [
-  '#0A0A0A',
-  '#FAFAF9',
-  '#E54E20',
-  '#FF3E04',
-  '#FF6131',
-  '#FF3C00',
-  '#514C4C',
-  '#666060',
+  '#FFFFFF',
+  '#502732',
+  '#4C4240',
+  '#83443D',
+  '#785748',
+  '#F70008',
+  '#F84608',
+  '#F96607',
+  '#F9CF01',
+  '#F7F804',
 ]
 
 /** --ink and --paper thinned. Alpha is not a new colour; a new triplet is. */
-const ALPHA_BASES = ['10,10,10', '250,250,249']
+const ALPHA_BASES = ['80,39,50', '255,255,255']
 
 function walk(dir: string, match: RegExp): string[] {
   const out: string[] = []
@@ -55,7 +59,7 @@ const SOURCE_FILES = walk('src', /\.(ts|tsx|css)$/)
 /* ==================================================================== colour */
 
 describe('colour', () => {
-  it('uses no hex outside the eight tokens', () => {
+  it('uses no hex outside the ten tokens', () => {
     /**
      * Brand.tsx is the one exception, and it is an exception because it is not
      * interface — it is a drawing, transcribed from the reference artwork under
@@ -70,8 +74,24 @@ describe('colour', () => {
      * and the carrier fill beneath it, the latter only ever seen at ten percent
      * through the gradient laid over it. Neither is a token — nothing can
      * reference them, they exist inside one drawing.
+     *
+     * The last four are the previous palette, and their presence here is the
+     * honest record of a decision rather than an oversight. The interface moved
+     * to white and the two supplied palettes; the reference lockups under
+     * brand/ were hand-made and declared final, and a reference file is not
+     * repainted to match a token. So the mark still carries #0A0A0A and the old
+     * oranges, and it will until a redrawn mark replaces it. Nothing outside
+     * this one generated file may use them.
      */
-    const ARTWORK_ONLY = ['#6C6C6C', '#D9D9D9', '#FF3B00']
+    const ARTWORK_ONLY = [
+      '#6C6C6C',
+      '#D9D9D9',
+      '#FF3B00',
+      '#0A0A0A',
+      '#FF6131',
+      '#FF3E04',
+      '#FF3C00',
+    ]
 
     for (const file of [...SOURCE_FILES, 'index.html']) {
       const allowed =
@@ -111,8 +131,16 @@ describe('colour', () => {
     }
   })
 
-  it('puts ink on every orange fill, never white', () => {
-    // white measures 3.56 against --cta and fails AA; ink measures 5.56
+  it('puts paper on every fire fill at a size that clears AA', () => {
+    /**
+     * This inverted when the palette did, and the size is now part of the rule.
+     *
+     * Ink measures 2.96 against the fire palette's red and cannot be used on it
+     * at any size. Paper measures 4.24, which misses AA for small type and
+     * clears it for large — 18.66px at 700 — so the label is pinned at 19px/700
+     * and the test checks the size, not just the colour. Drop the size and the
+     * button silently stops passing while still looking identical.
+     */
     const rules = [
       ['src/index.css', '.pill-cta'],
       ['src/components/Hero.css', '.btn-primary'],
@@ -122,13 +150,25 @@ describe('colour', () => {
       const block = read(file).match(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`))?.[1]
       expect(block, `${file} ${selector}`).toBeTruthy()
       expect(block, `${file} ${selector}`).toContain('background-color: var(--cta)')
-      expect(block, `${file} ${selector}`).toContain('color: var(--ink)')
-      expect(block, `${file} ${selector}`).not.toContain('var(--paper)')
+      expect(block, `${file} ${selector}`).toContain('color: var(--paper)')
+      expect(block, `${file} ${selector}`).not.toContain('var(--ink)')
+
+      // 19px at 700 is what makes 4.24 legal — see the note above
+      expect(
+        Number(block?.match(/font-size:\s*(\d+)px/)?.[1]),
+        `${file} ${selector}`
+      ).toBeGreaterThanOrEqual(19)
+      expect(
+        Number(block?.match(/font-weight:\s*(\d+)/)?.[1]),
+        `${file} ${selector}`
+      ).toBeGreaterThanOrEqual(700)
     }
   })
 
   it('makes the dark section --ink rather than the warm grey', () => {
-    // --cta on #514C4C is 2.37 and the button vanishes; on --ink it is 5.56
+    // --cta reaches 2.30 on --text and 2.96 on --ink: the fire palette carries
+    // no button on a dark ground at all, so the band's one button is an outline
+    // in paper, and the ground is --ink because paper on it is 12.52
     const block = read('src/components/Body.css').match(
       /\.section-dark\s*\{([^}]*)\}/
     )?.[1]
@@ -137,9 +177,9 @@ describe('colour', () => {
   })
 
   it('never pairs --muted with type under 14px', () => {
-    // 5.90 against paper clears AA for body copy, but the brief draws the line
+    // 6.45 against paper clears AA for body copy, but the brief draws the line
     // at 14px and small text at that weight is where the contrast stops being
-    // comfortable. Anything smaller is --text, which measures 8.08.
+    // comfortable. Anything smaller is --text, which measures 9.72.
     for (const file of STYLE_FILES) {
       for (const [block] of read(file).matchAll(/\{[^}]*\}/g)) {
         if (!block.includes('var(--muted)')) continue
@@ -151,7 +191,8 @@ describe('colour', () => {
 
   it('keeps --accent to the places that earn it', () => {
     /**
-     * 2.87 against paper: it fails even the 3:1 floor for interface elements,
+     * 3.03 against paper: it only just clears the 3:1 floor for interface
+     * elements and is nowhere near the 4.5 for type,
      * so it may never be ordinary text or a border on the light ground.
      *
      * Checked by rule rather than by property, because the property alone
@@ -160,8 +201,8 @@ describe('colour', () => {
      * a paragraph and is not.
      *
      * The gradient is the third, and it is a ground rather than a mark: --accent
-     * is the light end of the sweep across the orange buttons, where it carries
-     * ink type at 6.60 rather than trying to be read itself.
+     * is the light end of the sweep across the fire buttons, where it carries
+     * paper type at 3.03 rather than trying to be read itself.
      */
     const rules: string[] = []
     for (const file of STYLE_FILES) {
@@ -241,7 +282,7 @@ describe('colour', () => {
 
     // paper, not accent: accent over --cta is 1.29:1 and simply is not there
     const rim = css.match(/-webkit-text-stroke:\s*([^;]+);/)?.[1]
-    expect(rim).toBe('1px var(--paper)')
+    expect(rim).toBe('1px var(--ink)')
   })
 
   it('burns the flame on ink, and shimmers the buttons instead', () => {
@@ -263,12 +304,12 @@ describe('colour', () => {
     }
 
     /**
-     * The buttons drift through the orange family instead. The stops are --cta,
-     * --cta-hover and --accent and not the flame's three: --ember and
-     * --cta-hover differ by two and four across their channels, so a gradient
-     * built from that pair is one colour with extra steps. Every stop here
-     * clears AA under ink — 5.13, 5.60, 6.60 — so the label holds at every
-     * moment of the cycle, not only at the ends.
+     * The buttons drift through the fire palette instead. The stops are --cta,
+     * --cta-hover and --accent — the red, the orange-red and the orange — and
+     * not the gold or the yellow, because paper on those two is 1.50 and 1.16
+     * and the label would vanish mid-sweep. Every stop here clears the 3.0 a
+     * large label needs — 4.24, 3.58, 3.03 — so it holds at every moment of the
+     * cycle, not only at the ends.
      */
     const css = read('src/index.css')
     const gradient = css.match(/\.pill-cta,\s*\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? ''

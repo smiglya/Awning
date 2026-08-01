@@ -91,8 +91,8 @@
 .section-showcase {
   /* faint plotting grid: the one section that admits it is a lab */
   background-image:
-    linear-gradient(to right, rgba(10, 10, 10, 0.032) 0.5px, transparent 0.5px),
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.032) 0.5px, transparent 0.5px);
+    linear-gradient(to right, rgba(80, 39, 50, 0.032) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, rgba(80, 39, 50, 0.032) 0.5px, transparent 0.5px);
   background-size: 64px 64px;
   border-top: 0.5px solid var(--rule);
   border-bottom: 0.5px solid var(--rule);

@@ -4,8 +4,8 @@
   "description": "Turnkey websites for New York local business. $999 flat, paid once. Live 48 hours after the brief.",
   "start_url": ".",
   "display": "browser",
-  "background_color": "#fafaf9",
-  "theme_color": "#0a0a0a",
+  "background_color": "#ffffff",
+  "theme_color": "#502732",
   "icons": [
     {
       "src": "favicon.png",

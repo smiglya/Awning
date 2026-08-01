@@ -34,7 +34,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-color: rgba(250, 250, 249, 0.72);
+  background-color: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 0.5px solid transparent;

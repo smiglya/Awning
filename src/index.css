@@ -1,42 +1,47 @@
 :root {
   /**
-   * Eight colours, and the site may not contain a ninth.
+   * White, four woods and five fire colours, and the site may not contain a
+   * tenth.
    *
-   * The brief specifies seven. --ember is the eighth, added on request for the
-   * pixel flame: it is #FF3C00, which was --cta itself until the conversion
-   * colour moved to #E54E20, so the fire burns in the three oranges the brand
-   * was drawn from.
+   * Every value below is lifted from one of the two supplied palettes —
+   * brand/wood-palitra.svg and brand/fire-palitra.svg — or is white. Nothing is
+   * mixed, tinted or nudged: a colour that is not in those two files is not in
+   * the brand, and that is the rule the whole system now hangs on.
    *
-   * Orange means one thing — "pay or leave a request here" — so it is spent in
-   * exactly six places (see §5.3 in the brief, and .pill-cta below). Colour it
-   * anything else and the eye stops finding the button, which is the whole job
-   * the colour was hired for. The flame is not a seventh place: it burns on the
-   * conversion button and nowhere else, which is the same place.
+   * The fire palette will not carry small text on any fill, and that is a
+   * measurement rather than an opinion. Against white type the five run 4.24,
+   * 3.58, 3.03, 1.50 and 1.16; against --ink they run 2.96, 3.50, 4.13, 8.32
+   * and 10.96. Only the gold and the yellow clear 4.5 with ink on them, and
+   * neither of those is a conversion colour — they read as caution.
    *
-   * Two contrast facts drive the rules that follow, measured rather than eyed:
-   * white on --cta is 3.86 and fails AA, --ink on --cta is 5.13 and passes. And
-   * --cta on --text is 2.19, so the dark band has to be --ink, not the warm
-   * grey. #514C4C is a text colour; it is never a full-bleed ground.
+   * So the conversion button keeps the red and pays for it in type size: white
+   * on --cta is 4.24, which clears AA at large text, and the label is set at
+   * 19px/700 to qualify. See .pill-cta.
+   *
+   * The wood palette is where the type lives, and it is generous — 12.52, 9.72,
+   * 7.35 and 6.45 on white.
    */
-  --ink: #0a0a0a; /* dark band, the mark, text on orange */
-  --paper: #fafaf9; /* page ground */
-  --cta: #e54e20; /* conversion fill, and the only job orange has. 5.13 on --ink */
-  --cta-hover: #ff3e04; /* hover and active of that same button, and the flame */
-  --accent: #ff6131; /* one cell of pixel art, focus ring on ink, the flame base */
-  --ember: #ff3c00; /* the flame's tips, and nothing else on the site */
-  --text: #514c4c; /* body copy on paper. 8.08 */
-  --muted: #666060; /* secondary, 14px and up only. 5.90 */
+  --paper: #ffffff; /* page ground */
+  --ink: #502732; /* dark band, the mark, body headings. 12.52 */
+  --text: #4c4240; /* body copy on paper. 9.72 */
+  --bark: #83443d; /* the logs, and rules that have to be seen. 7.35 */
+  --muted: #785748; /* secondary, 14px and up only. 6.45 */
+  --cta: #f70008; /* conversion fill. 4.24 under paper type at 19px/700 */
+  --cta-hover: #f84608; /* hover and active of that same button. 3.58 */
+  --accent: #f96607; /* the gradient's far stop, focus ring on ink. 3.03 */
+  --ember: #f9cf01; /* the flame's heart. 8.32 on --ink */
+  --spark: #f7f804; /* the flame's core, and nothing else. 10.96 on --ink */
 
   /**
    * --ink and --paper thinned. Not new colours — the same two values at alpha,
    * which is how hairlines and the nav plate are specified in the brief.
    */
-  --rule: rgba(10, 10, 10, 0.14);
-  --rule-strong: rgba(10, 10, 10, 0.32);
-  --rule-dark: rgba(250, 250, 249, 0.2);
-  --dim-dark: rgba(250, 250, 249, 0.7);
-  --faint-dark: rgba(250, 250, 249, 0.45);
-  --plate: rgba(250, 250, 249, 0.72);
+  --rule: rgba(80, 39, 50, 0.14);
+  --rule-strong: rgba(80, 39, 50, 0.32);
+  --rule-dark: rgba(255, 255, 255, 0.2);
+  --dim-dark: rgba(255, 255, 255, 0.7);
+  --faint-dark: rgba(255, 255, 255, 0.45);
+  --plate: rgba(255, 255, 255, 0.72);
 
   /* grid — 1440 canvas, 12 cols, 120px margins, 24px gutters */
   --canvas: 1440px;
@@ -124,13 +129,14 @@ input {
 }
 
 /**
- * The ring is --cta on paper and --accent on ink, because --cta only reaches
- * 3.41 against paper and 1.6 against ink — legible as a ring on the light
- * ground, invisible on the dark one. --accent gets 6.61 on ink.
+ * The ring is --cta on paper and --accent on ink, because --cta reaches 4.24
+ * against paper and only 2.96 against ink — legible as a ring on the light
+ * ground, under the 3.0 a non-text mark needs on the dark one. --accent gets
+ * 4.13 on ink and clears it.
  *
- * This is the one place orange appears without meaning "press me", and it is
- * the exception the brief makes: a focus ring is the keyboard user's cursor,
- * not an advertisement.
+ * This is the one place a fire colour appears without meaning "press me", and
+ * it is the exception the brief makes: a focus ring is the keyboard user's
+ * cursor, not an advertisement.
  */
 :focus-visible {
   outline: 2px solid var(--cta);
@@ -262,8 +268,8 @@ input {
   /* placeholder blocks read as drafting paper, not as broken images */
   background-image: repeating-linear-gradient(
     -45deg,
-    rgba(10, 10, 10, 0.028) 0,
-    rgba(10, 10, 10, 0.028) 1px,
+    rgba(80, 39, 50, 0.028) 0,
+    rgba(80, 39, 50, 0.028) 1px,
     transparent 1px,
     transparent 9px
   );
@@ -304,9 +310,16 @@ input {
 /**
  * The conversion button, and the only filled button the page is allowed.
  *
- * Text is --ink rather than white on purpose: white on this orange measures
- * 3.56 and fails AA, --ink measures 5.56 and passes. Every orange fill on the
- * site carries ink type for that reason — there is no variant with white on it.
+ * The label turned white when the palette did, and it is the size that makes
+ * that legal. Ink on the fire palette's red is 2.96 and cannot be used at any
+ * size; paper on it is 4.24, which misses AA for small type by 0.26 and clears
+ * AA for large type with room to spare. Large is 18.66px at 700, so the label
+ * is set at 19px/700 — the one place on the site where a type size is a
+ * contrast decision rather than a typographic one.
+ *
+ * The alternative was --ember, where ink measures 8.32 and passes outright. It
+ * was not taken: a gold button reads as caution, and the conversion colour is
+ * the one thing on the page that may not be misread.
  *
  * hover swaps in --cta-hover, which is a shade apart from --cta and does
  * nothing else anywhere. Deliberate: a hover state that is merely the fill at
@@ -314,7 +327,9 @@ input {
  */
 .pill-cta {
   background-color: var(--cta);
-  color: var(--ink);
+  color: var(--paper);
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .pill-cta:hover {
@@ -322,17 +337,15 @@ input {
 }
 
 /**
- * The orange fills drift through the orange family instead of sitting flat.
+ * The fire fills drift through the palette instead of sitting flat.
  *
- * Three stops, and they are --cta, --cta-hover and --accent rather than the
- * three the flame burns in. --ember and --cta-hover differ by two and four
- * across their channels: a gradient built from that pair is one colour with
- * extra work. These three run 0.222, 0.247 and 0.300 in luminance, which is a
- * sweep the eye can actually follow.
- *
- * Every stop clears AA under ink type — 5.13, 5.60 and 6.60 — so the label is
- * legible at every moment of the cycle rather than only at the ends. That is
- * the constraint that picked the stops; the look came second.
+ * Three stops — --cta, --cta-hover and --accent, which are the red, the
+ * orange-red and the orange the supplied palette hands over in that order.
+ * They run 0.198, 0.244 and 0.297 in luminance, which is a sweep the eye can
+ * follow, and every one of them clears 3.0 under paper type — 4.24, 3.58 and
+ * 3.03 — so the label holds at every moment of the cycle rather than only at
+ * the ends. The gold and the yellow are not in the gradient for exactly that
+ * reason: paper on them is 1.50 and 1.16, and the label would vanish mid-sweep.
  *
  * `alternate` rather than a loop. A repeating gradient sliding one way has to
  * return, and the return is either a jump or a rewind; running it out and back
@@ -367,28 +380,28 @@ input {
 }
 
 /**
- * The two orange fills, and only those, rim their label in paper.
+ * The two fire fills, and only those, rim their label — now in ink.
  *
- * An --accent rim on every button came off again, and the reason is worth
+ * The rim inverted because the label did. A paper rim was right when the label
+ * was ink on orange; with a paper label it would be the same colour as the
+ * type and do nothing at all. Ink over --cta measures 2.96, which is not enough
+ * for type and is ample for a rim, and it is what holds the white label off a
+ * red that is only 4.24 away from it.
+ *
+ * An --accent rim on every button came off earlier, and the reason is worth
  * keeping: -webkit-text-stroke inherits, so it reached every descendant, and at
  * the 11 and 12px of a menu label or the launcher's offer line a half-pixel rim
  * is a large share of the glyph. The words read as orange — which is the one
- * thing orange may not do away from a conversion button.
- *
- * Paper is the right colour here for the opposite reason. --accent over --cta
- * measures 1.29:1 and cannot be seen at all; paper measures 3.86, which is not
- * enough for type and is ample for a rim. It separates the ink label from the
- * orange behind it rather than blending into it, so the 5.13:1 the label works
- * with survives the treatment instead of paying for it.
+ * thing the fire colours may not do away from a conversion button.
  *
  * paint-order puts the stroke behind the fill, so the rim grows outward and the
  * letterform keeps its full mass. Without it the stroke centres on the outline
- * and takes half its width out of the glyph, which at 14px is the difference
+ * and takes half its width out of the glyph, which at 19px is the difference
  * between a rim and a thinner, muddier typeface.
  */
 .pill-cta,
 .btn-primary {
-  -webkit-text-stroke: 1px var(--paper);
+  -webkit-text-stroke: 1px var(--ink);
   paint-order: stroke fill;
 }
 
@@ -399,7 +412,7 @@ input {
 }
 
 .pill-outline:hover {
-  background-color: rgba(10, 10, 10, 0.05);
+  background-color: rgba(80, 39, 50, 0.05);
   border-color: var(--ink);
 }
 
@@ -412,7 +425,7 @@ input {
 }
 
 .pill-outline-dark:hover {
-  background-color: rgba(250, 250, 249, 0.08);
+  background-color: rgba(255, 255, 255, 0.08);
   border-color: var(--paper);
 }
 

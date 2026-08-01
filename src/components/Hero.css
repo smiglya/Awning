@@ -46,7 +46,7 @@
   background: linear-gradient(
     to top,
     var(--paper) 0%,
-    rgba(250, 250, 249, 0.8) 50%,
+    rgba(255, 255, 255, 0.8) 50%,
     transparent 100%
   );
 }
@@ -106,7 +106,7 @@
   gap: 9px;
   padding: 8px 15px;
   border-radius: 999px;
-  background-color: rgba(250, 250, 249, 0.75);
+  background-color: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 0.5px solid var(--rule);
@@ -167,16 +167,21 @@
 }
 
 /**
- * The first of the six orange places, and the loudest. Ink type on it, never
- * white: white lands at 3.56 against this orange and fails AA, ink at 5.56 and
- * passes. The arrow beside it renders in currentColor for the same reason —
- * an orange cell on an orange fill is a hole, not a highlight.
+ * The first of the six conversion places, and the loudest. Paper type on it,
+ * never ink: ink lands at 2.96 against the palette's red and cannot be used at
+ * any size, paper at 4.24 and clears AA for large text. 19px/700 is what makes
+ * it large — the sizing lives with .pill-cta in index.css so the two fills
+ * cannot drift apart. The arrow beside it renders in currentColor for the same
+ * reason a fire cell would not work: an orange mark on an orange fill is a
+ * hole, not a highlight.
  */
 /* the shimmer that runs across this lives with .pill-cta in index.css, so the
-   two orange fills cannot drift into different animations */
+   two fire fills cannot drift into different animations */
 .btn-primary {
   background-color: var(--cta);
-  color: var(--ink);
+  color: var(--paper);
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .btn-primary:hover {
